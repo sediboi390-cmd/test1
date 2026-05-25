@@ -312,10 +312,10 @@ canvas#map{position:absolute;inset:0;width:100%;height:100%;}
       <div class="form-row">
         <label class="form-label">Map Region (lat/lng bounding box)</label>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
-          <input class="form-input" id="osMinLat" placeholder="Min Lat" value="14.0">
-          <input class="form-input" id="osMaxLat" placeholder="Max Lat" value="15.2">
-          <input class="form-input" id="osMinLng" placeholder="Min Lng" value="120.5">
-          <input class="form-input" id="osMaxLng" placeholder="Max Lng" value="121.5">
+          <input class="form-input" id="osMinLat" placeholder="Min Lat" value="10.0">
+          <input class="form-input" id="osMaxLat" placeholder="Max Lat" value="19.0">
+          <input class="form-input" id="osMinLng" placeholder="Min Lng" value="117.0">
+          <input class="form-input" id="osMaxLng" placeholder="Max Lng" value="127.0">
         </div>
       </div>
     </div>
@@ -334,7 +334,7 @@ canvas#map{position:absolute;inset:0;width:100%;height:100%;}
 
 
 <script>
-const STATE={drones:[],liveDrones:[],selectedDrone:null,layer:'satellite',filter:'all',search:'',showPaths:true,showGeofence:false,mapScale:1,mapOffset:{x:0,y:0},dragging:false,dragStart:{x:0,y:0},bounds:{minLat:14.0,maxLat:15.2,minLng:120.5,maxLng:121.5},alerts:[],flightLog:[],tracking:false,trackedId:null,apiMode:'demo',fhConfig:{host:'',token:'',orgId:'',mqtt:''},osConfig:{user:'',pass:''},weather:null};
+const STATE={drones:[],liveDrones:[],selectedDrone:null,layer:'satellite',filter:'all',search:'',showPaths:true,showGeofence:false,mapScale:1,mapOffset:{x:0,y:0},dragging:false,dragStart:{x:0,y:0},bounds:{minLat:10.0,maxLat:19.0,minLng:117.0,maxLng:127.0},alerts:[],flightLog:[],tracking:false,trackedId:null,apiMode:'demo',fhConfig:{host:'',token:'',orgId:'',mqtt:''},osConfig:{user:'',pass:''},weather:null};
 const DJI_MODELS=['Mavic 3 Pro','Mavic 3 Classic','Mini 4 Pro','Air 3','Phantom 4 RTK','Matrice 350 RTK','Avata 2','Neo 2','Inspire 3','Agras T50','Mini 3 Pro','FPV Combo','Matrice 300 RTK','Mavic 3 Enterprise','Mini 3','Air 2S'];
 const SERIES=['DJI-','MV-','PH-','MT-','AV-','FP-','AG-'];
 const STATUSES=['flying','flying','flying','flying','flying','warning','warning','offline','alert'];
@@ -641,7 +641,7 @@ async function applyApiConfig(){
   const src=document.getElementById('dataSource').value;STATE.apiMode=src;
   if(src==='opensky'){
     STATE.osConfig={user:document.getElementById('osUser').value,pass:document.getElementById('osPass').value};
-    const b=STATE.bounds;b.minLat=parseFloat(document.getElementById('osMinLat').value)||14.0;b.maxLat=parseFloat(document.getElementById('osMaxLat').value)||15.2;b.minLng=parseFloat(document.getElementById('osMinLng').value)||120.5;b.maxLng=parseFloat(document.getElementById('osMaxLng').value)||121.5;
+    const b=STATE.bounds;b.minLat=parseFloat(document.getElementById('osMinLat').value)||10.0;b.maxLat=parseFloat(document.getElementById('osMaxLat').value)||19.0;b.minLng=parseFloat(document.getElementById('osMinLng').value)||117.0;b.maxLng=parseFloat(document.getElementById('osMaxLng').value)||127.0;
     closeModal('apiModal');await fetchOpenSky();
   }else{STATE.liveDrones=[];document.getElementById('apiLabel').textContent='Demo Mode';document.getElementById('apiBadge').className='api-badge demo';closeModal('apiModal');toast('🎮 Demo mode active');}
 }
