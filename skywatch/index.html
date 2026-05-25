@@ -187,7 +187,7 @@ canvas#map{position:absolute;inset:0;width:100%;height:100%;}
     </div>
     <div class="api-badge opensky" id="oskyBadge" title="OpenSky Network">
       <div class="pulse purple" id="oskyPulse"></div>
-      <span id="oskyLabel">OpenSky Live</span>
+      <span id="oskyLabel">VATSIM Live</span>
     </div>
   </div>
   <div class="header-stats">
@@ -582,35 +582,44 @@ function setTab(s,btn){STATE.filter=s;document.querySelectorAll('.ftab').forEach
 function searchDrones(v){STATE.search=v;}
 async function fetchOpenSky(){
   const b=STATE.bounds;
-  const apiUrl=`https://opensky-network.org/api/states/all?lamin=${b.minLat}&lomin=${b.minLng}&lamax=${b.maxLat}&lomax=${b.maxLng}`;
-  // CORS proxies to try in order
-  const proxies=[
-    `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`,
-    apiUrl // direct last (works if OpenSky adds CORS headers in future)
-  ];
-  toast('📡 Fetching live ATC data...');document.getElementById('oskyLabel').textContent='Fetching...';
-  let lastErr='';
-  for(const url of proxies){
-    try{
-      const resp=await fetch(url,{mode:'cors'});
-      if(!resp.ok)throw new Error('HTTP '+resp.status);
-      const data=await resp.json();const states=data.states||[];
-      STATE.liveDrones=states.slice(0,60).map(s=>{
-        const[icao,callsign,,,,lng,lat,baroAlt,,onGround,vel,,hdg]=s;
-        if(!lat||!lng)return null;
-        return{id:'ATC-'+icao.toUpperCase(),model:'Aircraft',callsign:(callsign||'N/A').trim(),icao,status:'live',battery:100,altitude:Math.round(baroAlt||0),speed:Math.round((vel||0)*3.6),heading:hdg||0,distance:0,signal:100,flightTime:0,lat:parseFloat(lat),lng:parseFloat(lng),vLat:0,vLng:0,path:[],altHist:Array.from({length:30},()=>Math.round(baroAlt||0)),source:'opensky',onGround};
-      }).filter(Boolean);
-      document.getElementById('oskyLabel').textContent=`OpenSky: ${STATE.liveDrones.length} Aircraft`;
-      document.getElementById('oskyBadge').className='api-badge opensky';
-      document.getElementById('oskyStatus').textContent='CONNECTED';document.getElementById('oskyStatus').className='status-indicator si-ok';
-      toast(`✈ ${STATE.liveDrones.length} live aircraft loaded`);addAlert('info',`OpenSky: ${STATE.liveDrones.length} aircraft in Philippine airspace`);
-      return;
-    }catch(err){lastErr=err.message;console.warn('Proxy failed:',url,err.message);}
+  toast('📡 Fetching live flight data...');document.getElementById('oskyLabel').textContent='Fetching...';
+  try{
+    // VATSIM Data API — free, no auth, full CORS support, real pilots worldwide
+    const resp=await fetch('https://data.vatsim.net/v3/vatsim-data.json');
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    const pilots=(data.pilots||[]).filter(p=>
+      p.latitude>=b.minLat&&p.latitude<=b.maxLat&&
+      p.longitude>=b.minLng&&p.longitude<=b.maxLng
+    );
+    STATE.liveDrones=pilots.slice(0,60).map(p=>({
+      id:'VATSIM-'+p.callsign,
+      model:'Aircraft ('+( p.flight_plan?.aircraft_short||'Unknown')+')',
+      callsign:p.callsign,
+      icao:p.callsign,
+      status:'live',
+      battery:100,
+      altitude:Math.round(p.altitude||0),
+      speed:Math.round(p.groundspeed||0),
+      heading:p.heading||0,
+      distance:0,signal:100,flightTime:0,
+      lat:p.latitude,lng:p.longitude,
+      vLat:0,vLng:0,path:[],
+      altHist:Array.from({length:30},()=>Math.round(p.altitude||0)),
+      source:'opensky',onGround:p.groundspeed<10
+    }));
+    const count=STATE.liveDrones.length;
+    document.getElementById('oskyLabel').textContent=`VATSIM: ${count} Aircraft`;
+    document.getElementById('oskyBadge').className='api-badge opensky';
+    document.getElementById('oskyStatus').textContent='CONNECTED';document.getElementById('oskyStatus').className='status-indicator si-ok';
+    toast(`✈ ${count} live flights in PH airspace`);
+    addAlert('info',`VATSIM: ${count} aircraft in Philippine airspace`);
+  }catch(err){
+    document.getElementById('oskyLabel').textContent='Live Data: Error';
+    document.getElementById('oskyStatus').textContent='ERROR';document.getElementById('oskyStatus').className='status-indicator si-err';
+    toast('⚠ Live data unavailable: '+err.message);
+    addAlert('warning','VATSIM fetch failed: '+err.message);
   }
-  document.getElementById('oskyLabel').textContent='OpenSky: Unavailable';
-  document.getElementById('oskyStatus').textContent='ERROR';document.getElementById('oskyStatus').className='status-indicator si-err';
-  toast('⚠ OpenSky unavailable — demo mode active');addAlert('warning','OpenSky unreachable (CORS): '+lastErr);
 }
 async function fetchWeather(){
   const b=STATE.bounds;const lat=(b.minLat+b.maxLat)/2,lng=(b.minLng+b.maxLng)/2;
@@ -663,7 +672,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 STATE.drones=genDrones(14);
 addAlert('info','SkyWatch Pro initialized — Demo mode active');
 addAlert('info','Weather data: Open-Meteo API');
-addAlert('info','Live ATC: Click ↺ to fetch OpenSky data');
+addAlert('info','Live ATC: VATSIM real flights — click ↺ to refresh');
 fetchWeather();
 fetchOpenSky();
 setInterval(fetchOpenSky,600000);
