@@ -582,24 +582,35 @@ function setTab(s,btn){STATE.filter=s;document.querySelectorAll('.ftab').forEach
 function searchDrones(v){STATE.search=v;}
 async function fetchOpenSky(){
   const b=STATE.bounds;
-  const url=`https://opensky-network.org/api/states/all?lamin=${b.minLat}&lomin=${b.minLng}&lamax=${b.maxLat}&lomax=${b.maxLng}`;
+  const apiUrl=`https://opensky-network.org/api/states/all?lamin=${b.minLat}&lomin=${b.minLng}&lamax=${b.maxLat}&lomax=${b.maxLng}`;
+  // CORS proxies to try in order
+  const proxies=[
+    `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`,
+    apiUrl // direct last (works if OpenSky adds CORS headers in future)
+  ];
   toast('📡 Fetching live ATC data...');document.getElementById('oskyLabel').textContent='Fetching...';
-  try{
-    const resp=await fetch(url);if(!resp.ok)throw new Error('HTTP '+resp.status);
-    const data=await resp.json();const states=data.states||[];
-    STATE.liveDrones=states.slice(0,60).map(s=>{
-      const[icao,callsign,,,,lng,lat,baroAlt,,onGround,vel,,hdg]=s;
-      if(!lat||!lng)return null;
-      return{id:'ATC-'+icao.toUpperCase(),model:'Aircraft',callsign:(callsign||'N/A').trim(),icao,status:'live',battery:100,altitude:Math.round(baroAlt||0),speed:Math.round((vel||0)*3.6),heading:hdg||0,distance:0,signal:100,flightTime:0,lat:parseFloat(lat),lng:parseFloat(lng),vLat:0,vLng:0,path:[],altHist:Array.from({length:30},()=>Math.round(baroAlt||0)),source:'opensky',onGround};
-    }).filter(Boolean);
-    document.getElementById('oskyLabel').textContent=`OpenSky: ${STATE.liveDrones.length} Aircraft`;
-    document.getElementById('oskyStatus').textContent='CONNECTED';document.getElementById('oskyStatus').className='status-indicator si-ok';
-    toast(`✈ ${STATE.liveDrones.length} live aircraft loaded`);addAlert('info',`OpenSky: ${STATE.liveDrones.length} aircraft in region`);
-  }catch(err){
-    document.getElementById('oskyLabel').textContent='OpenSky: Offline';
-    document.getElementById('oskyStatus').textContent='ERROR';document.getElementById('oskyStatus').className='status-indicator si-err';
-    toast('⚠ OpenSky unavailable — using demo data');addAlert('warning','OpenSky Network unreachable: '+err.message);
+  let lastErr='';
+  for(const url of proxies){
+    try{
+      const resp=await fetch(url,{mode:'cors'});
+      if(!resp.ok)throw new Error('HTTP '+resp.status);
+      const data=await resp.json();const states=data.states||[];
+      STATE.liveDrones=states.slice(0,60).map(s=>{
+        const[icao,callsign,,,,lng,lat,baroAlt,,onGround,vel,,hdg]=s;
+        if(!lat||!lng)return null;
+        return{id:'ATC-'+icao.toUpperCase(),model:'Aircraft',callsign:(callsign||'N/A').trim(),icao,status:'live',battery:100,altitude:Math.round(baroAlt||0),speed:Math.round((vel||0)*3.6),heading:hdg||0,distance:0,signal:100,flightTime:0,lat:parseFloat(lat),lng:parseFloat(lng),vLat:0,vLng:0,path:[],altHist:Array.from({length:30},()=>Math.round(baroAlt||0)),source:'opensky',onGround};
+      }).filter(Boolean);
+      document.getElementById('oskyLabel').textContent=`OpenSky: ${STATE.liveDrones.length} Aircraft`;
+      document.getElementById('oskyBadge').className='api-badge opensky';
+      document.getElementById('oskyStatus').textContent='CONNECTED';document.getElementById('oskyStatus').className='status-indicator si-ok';
+      toast(`✈ ${STATE.liveDrones.length} live aircraft loaded`);addAlert('info',`OpenSky: ${STATE.liveDrones.length} aircraft in Philippine airspace`);
+      return;
+    }catch(err){lastErr=err.message;console.warn('Proxy failed:',url,err.message);}
   }
+  document.getElementById('oskyLabel').textContent='OpenSky: Unavailable';
+  document.getElementById('oskyStatus').textContent='ERROR';document.getElementById('oskyStatus').className='status-indicator si-err';
+  toast('⚠ OpenSky unavailable — demo mode active');addAlert('warning','OpenSky unreachable (CORS): '+lastErr);
 }
 async function fetchWeather(){
   const b=STATE.bounds;const lat=(b.minLat+b.maxLat)/2,lng=(b.minLng+b.maxLng)/2;
