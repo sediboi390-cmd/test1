@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Story Sheet Maker v2.0 — templates, drag-drop, undo/redo, dark mode, PDF export — 2026-05-27 -->
+<!-- Collage Maker v2.0 — templates, drag-drop, undo/redo, dark mode, PDF export — 2026-05-27 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Story Sheet Maker</title>
+<title>Collage Maker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -640,11 +640,11 @@ html.dark .modal-veil { background: rgba(0,0,0,0.7); }
 <header class="top">
   <div class="brand">
     <div class="brand-mark"></div>
-    <div class="brand-name">Story Sheet</div>
+    <div class="brand-name">Collage</div>
     <div class="brand-sub">Maker</div>
   </div>
   <div class="title-row">
-    <input class="project-title" id="projectTitle" placeholder="Untitled story sheet" maxlength="80"/>
+    <input class="project-title" id="projectTitle" placeholder="Untitled collage" maxlength="80"/>
     <span class="panel-count"><b id="panelCount">0</b> panels</span>
   </div>
   <p class="tagline">Add images, drag to reorder, then hit Compose Sheet to pick a template and generate your final sheet.</p>
@@ -734,11 +734,11 @@ html.dark .modal-veil { background: rgba(0,0,0,0.7); }
 'use strict';
 
 /* ════════════════════════════════════════════════
-   Story Sheet Maker v2.0
+   Collage Maker v2.0
    Templates, Drag-Drop, Undo/Redo, Dark Mode, PDF
    ════════════════════════════════════════════════ */
 
-const STORAGE_KEY = 'storySheet.project.v2';
+const STORAGE_KEY = 'collageMaker.project.v2';
 const MAX_UNDO = 40;
 
 const App = {
@@ -1211,7 +1211,7 @@ async function composeSheet(templateId) {
   ctx.fillRect(0, 0, canvasW, canvasH);
 
   // Header
-  const title = (App.project.title || 'Story Sheet').trim();
+  const title = (App.project.title || 'Collage').trim();
   ctx.fillStyle = tpl.text;
   ctx.font = `600 32px "${tpl.font}", system-ui, sans-serif`;
   ctx.textBaseline = 'top';
@@ -1405,7 +1405,7 @@ async function composeSheet(templateId) {
   }
 
   // Footer watermark
-  const wmText = (App.project.watermark || '').trim() || 'story sheet';
+  const wmText = (App.project.watermark || '').trim() || 'collage maker';
   ctx.fillStyle = tpl.accent;
   ctx.font = `400 11px "${tpl.font}", system-ui, sans-serif`;
   ctx.textAlign = 'right';
@@ -1437,7 +1437,7 @@ function roundRect(ctx, x, y, w, h, r) {
 }
 
 function safeName() {
-  return (App.project.title || 'story-sheet').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'story-sheet';
+  return (App.project.title || 'collage').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'collage';
 }
 
 /* ─── Result Modal ─── */
@@ -1448,13 +1448,13 @@ function showResultModal(url, panelCount, canvas, tpl) {
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-head">
           <div>
-            <h3>Your story sheet is ready</h3>
+            <h3>Your collage is ready</h3>
             <div class="sub">${panelCount} panel${panelCount === 1 ? '' : 's'} · ${tpl.name} template</div>
           </div>
           <button class="btn ghost" id="closeModal">Close</button>
         </div>
         <div class="modal-body" style="display:flex;align-items:center;justify-content:center;">
-          <img src="${url}" alt="Composed story sheet"/>
+          <img src="${url}" alt="Composed collage"/>
         </div>
         <div class="modal-foot">
           <button class="btn" id="tryAnother">← Try another template</button>
