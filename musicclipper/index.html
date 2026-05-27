@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Music Clipper</title>
+  <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+  <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+  <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --border: #dee2e6;
+      --accent: #4361ee;
+      --accent-hover: #3a56d4;
+      --danger: #e63946;
+      --success: #2a9d8f;
+      --text: #212529;
+      --text-muted: #6c757d;
+      --radius: 10px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .hidden { display: none !important; }
+
+    /* Header */
+    header { text-align: center; padding: 2rem 1rem 0.5rem; }
+    header h1 { font-size: 2rem; font-weight: 700; }
+    header p { color: var(--text-muted); margin-top: 0.25rem; font-size: 0.95rem; }
+
+    /* Layout */
+    main { max-width: 800px; margin: 0 auto; padding: 1.5rem 1rem 3rem; display: flex; flex-direction: column; gap: 1.5rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); }
+    .card h2 { font-size: 0.8rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1.1rem; border-radius: 6px; border: none; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: background 0.15s, opacity 0.15s; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #c1121f; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #21867a; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--bg); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Drop zone */
+    #drop-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 2rem 1rem; text-align: center; color: var(--text-muted); transition: border-color 0.2s, background 0.2s; cursor: pointer; }
+    #drop-zone.dragover { border-color: var(--accent); background: #eef0fd; }
+    #drop-zone p { margin: 0.2rem 0; }
+    #drop-zone .small { font-size: 0.8rem; }
+    #file-list { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .file-item { display: flex; align-items: center; justify-content: space-between; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.9rem; }
+    .file-item .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 85%; }
+    .file-item button { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1rem; flex-shrink: 0; }
+
+    /* Waveform */
+    #waveform { margin: 0.75rem 0; border-radius: 6px; overflow: hidden; background: var(--bg); min-height: 100px; }
+    #playback-controls { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    #time-display { font-size: 0.9rem; color: var(--text-muted); font-variant-numeric: tabular-nums; margin-left: auto; }
+
+    /* Selection controls */
+    #time-inputs { display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    #time-inputs label { display: flex; flex-direction: column; font-size: 0.8rem; color: var(--text-muted); gap: 0.25rem; font-weight: 500; }
+    #time-inputs input { padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; width: 110px; font-family: monospace; }
+    #time-inputs input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    #action-buttons { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+    /* Merge */
+    #merge-section p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem; }
+
+    /* Export */
+    #export-controls { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    #export-controls label { display: flex; flex-direction: column; font-size: 0.8rem; color: var(--text-muted); gap: 0.25rem; font-weight: 500; }
+    #export-controls select { padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; background: var(--surface); }
+    #progress-wrap { margin-top: 1rem; }
+    #progress-bar { background: var(--bg); border-radius: 999px; overflow: hidden; height: 8px; border: 1px solid var(--border); }
+    #progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+    #progress-label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.4rem; }
+
+    /* Toast */
+    #toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 0.65rem 1.4rem; border-radius: 999px; font-size: 0.9rem; z-index: 9999; white-space: nowrap; animation: fadeInUp 0.2s ease; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🎵 Music Clipper</h1>
+  <p>Trim, cut and merge audio — right in your browser</p>
+</header>
+
+<main>
+
+  <!-- File Loader -->
+  <section id="loader-section" class="card">
+    <h2>📂 Load Audio</h2>
+    <div id="drop-zone">
+      <p>Drag &amp; drop audio files here</p>
+      <p class="small">or</p>
+      <label class="btn btn-primary" for="file-input" style="margin-top:0.5rem">Choose File(s)</label>
+      <input type="file" id="file-input" accept="audio/*" multiple hidden/>
+    </div>
+    <div id="file-list"></div>
+  </section>
+
+  <!-- Waveform -->
+  <section id="waveform-section" class="card hidden">
+    <h2>🎛 Waveform</h2>
+    <div id="waveform"></div>
+    <div id="playback-controls">
+      <button class="btn btn-outline" id="btn-play">▶ Play</button>
+      <button class="btn btn-outline" id="btn-stop">⏹ Stop</button>
+      <span id="time-display"><span id="current-time">0:00.00</span> / <span id="total-time">0:00.00</span></span>
+    </div>
+  </section>
+
+  <!-- Selection Controls -->
+  <section id="controls-section" class="card hidden">
+    <h2>✂️ Selection</h2>
+    <div id="time-inputs">
+      <label>Start<input type="text" id="input-start" placeholder="0:00.00"/></label>
+      <label>End<input type="text" id="input-end" placeholder="0:00.00"/></label>
+      <button class="btn btn-outline" id="btn-select-all" style="margin-bottom:1px">Select All</button>
+    </div>
+    <div id="action-buttons">
+      <button class="btn btn-primary" id="btn-trim">✂️ Trim (keep selection)</button>
+      <button class="btn btn-danger" id="btn-cut">🔪 Cut (remove selection)</button>
+    </div>
+  </section>
+
+  <!-- Merge -->
+  <section id="merge-section" class="card">
+    <h2>🔗 Merge Clips</h2>
+    <p>Load 2 or more files above, then merge them in order.</p>
+    <button class="btn btn-primary" id="btn-merge">🔗 Merge All Files</button>
+  </section>
+
+  <!-- Export -->
+  <section id="export-section" class="card hidden">
+    <h2>💾 Export</h2>
+    <div id="export-controls">
+      <label>Format
+        <select id="format-select">
+          <option value="mp3">MP3</option>
+          <option value="wav">WAV</option>
+          <option value="ogg">OGG</option>
+        </select>
+      </label>
+      <button class="btn btn-success" id="btn-export">⬇️ Export &amp; Download</button>
+    </div>
+    <div id="progress-wrap" class="hidden">
+      <div id="progress-bar"><div id="progress-fill"></div></div>
+      <span id="progress-label">Processing…</span>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="hidden"></div>
+
+<script>
+// ─── Toast ───────────────────────────────────────────────
+function showToast(msg, duration = 3500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.add('hidden'), duration);
+}
+
+// ─── Time helpers ─────────────────────────────────────────
+function formatTime(s) {
+  s = Math.max(0, s);
+  const m = Math.floor(s / 60);
+  const sec = (s % 60).toFixed(2).padStart(5, '0');
+  return `${m}:${sec}`;
+}
+function parseTime(str) {
+  if (!str) return 0;
+  const parts = str.split(':');
+  return parseFloat(parts[0]) * 60 + parseFloat(parts[1] || 0);
+}
+
+// ─── File Loader ──────────────────────────────────────────
+const fileInput  = document.getElementById('file-input');
+const dropZone   = document.getElementById('drop-zone');
+const fileListEl = document.getElementById('file-list');
+let loadedFiles  = []; // [{ name, buffer }]
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', () => { handleFiles(fileInput.files); fileInput.value = ''; });
+
+async function handleFiles(files) {
+  for (const file of files) {
+    if (!file.type.startsWith('audio/')) { showToast('⚠ Not an audio file: ' + file.name); continue; }
+    const buffer = await file.arrayBuffer();
+    loadedFiles.push({ name: file.name, buffer, type: file.type });
+    renderFileList();
+  }
+  if (loadedFiles.length >= 1) loadFileIntoWaveform(loadedFiles[0]);
+}
+
+function renderFileList() {
+  fileListEl.innerHTML = loadedFiles.map((f, i) => `
+    <div class="file-item">
+      <span class="file-name">🎵 ${f.name}</span>
+      <button title="Remove" onclick="removeFile(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removeFile(i) {
+  loadedFiles.splice(i, 1);
+  renderFileList();
+  if (loadedFiles.length === 0) hideWaveform();
+  else loadFileIntoWaveform(loadedFiles[0]);
+}
+
+function hideWaveform() {
+  ['waveform-section','controls-section','export-section'].forEach(id =>
+    document.getElementById(id).classList.add('hidden'));
+}
+
+// ─── WaveSurfer ───────────────────────────────────────────
+let wavesurfer, regionsPlugin, activeRegion;
+
+function loadFileIntoWaveform(file) {
+  if (wavesurfer) { wavesurfer.destroy(); wavesurfer = null; }
+  regionsPlugin = WaveSurfer.Regions.create();
+  wavesurfer = WaveSurfer.create({
+    container: '#waveform',
+    waveColor: '#4361ee',
+    progressColor: '#3a56d4',
+    cursorColor: '#e63946',
+    cursorWidth: 2,
+    height: 110,
+    normalize: true,
+    plugins: [regionsPlugin]
+  });
+  const blob = new Blob([file.buffer], { type: file.type || 'audio/*' });
+  wavesurfer.loadBlob(blob);
+  wavesurfer.on('ready', () => {
+    ['waveform-section','controls-section','export-section'].forEach(id =>
+      document.getElementById(id).classList.remove('hidden'));
+    document.getElementById('total-time').textContent = formatTime(wavesurfer.getDuration());
+    addDefaultRegion();
+  });
+  wavesurfer.on('timeupdate', t =>
+    document.getElementById('current-time').textContent = formatTime(t));
+  wavesurfer.on('play',  () => document.getElementById('btn-play').textContent = '⏸ Pause');
+  wavesurfer.on('pause', () => document.getElementById('btn-play').textContent = '▶ Play');
+  wavesurfer.on('finish',() => document.getElementById('btn-play').textContent = '▶ Play');
+}
+
+document.getElementById('btn-play').addEventListener('click', () => wavesurfer?.playPause());
+document.getElementById('btn-stop').addEventListener('click', () => { wavesurfer?.stop(); });
+
+// ─── Region & Time Inputs ─────────────────────────────────
+function addDefaultRegion() {
+  regionsPlugin.clearRegions();
+  const dur = wavesurfer.getDuration();
+  activeRegion = regionsPlugin.addRegion({
+    start: 0,
+    end: dur,
+    color: 'rgba(67,97,238,0.15)',
+    drag: true,
+    resize: true
+  });
+  syncInputsFromRegion();
+  activeRegion.on('update', syncInputsFromRegion);
+  activeRegion.on('update-end', syncInputsFromRegion);
+}
+
+function syncInputsFromRegion() {
+  document.getElementById('input-start').value = formatTime(activeRegion.start);
+  document.getElementById('input-end').value   = formatTime(activeRegion.end);
+}
+
+document.getElementById('input-start').addEventListener('change', e => {
+  if (!activeRegion) return;
+  const t = Math.min(parseTime(e.target.value), activeRegion.end - 0.01);
+  activeRegion.setOptions({ start: Math.max(0, t) });
+});
+document.getElementById('input-end').addEventListener('change', e => {
+  if (!activeRegion) return;
+  const dur = wavesurfer.getDuration();
+  const t = Math.max(parseTime(e.target.value), activeRegion.start + 0.01);
+  activeRegion.setOptions({ end: Math.min(dur, t) });
+});
+document.getElementById('btn-select-all').addEventListener('click', () => {
+  if (!activeRegion || !wavesurfer) return;
+  activeRegion.setOptions({ start: 0, end: wavesurfer.getDuration() });
+  syncInputsFromRegion();
+});
+
+// ─── FFmpeg ───────────────────────────────────────────────
+const { FFmpeg } = FFmpegWASM;
+const { fetchFile } = FFmpegUtil;
+const ffmpeg = new FFmpeg();
+let ffmpegReady = false;
+let lastOutput  = null;
+
+async function loadFFmpeg() {
+  if (ffmpegReady) return;
+  showToast('⏳ Loading FFmpeg (first time only)…', 10000);
+  ffmpeg.on('log', ({ message }) => console.log('[ffmpeg]', message));
+  await ffmpeg.load({
+    coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+  });
+  ffmpegReady = true;
+  showToast('✅ FFmpeg ready!');
+}
+
+// ─── Trim ─────────────────────────────────────────────────
+document.getElementById('btn-trim').addEventListener('click', async () => {
+  if (!activeRegion) return showToast('⚠ No region selected');
+  if (!loadedFiles.length) return showToast('⚠ No file loaded');
+  try {
+    await loadFFmpeg();
+    const { start, end } = activeRegion;
+    const file = loadedFiles[0];
+    const ext = file.name.split('.').pop();
+    await ffmpeg.writeFile('input.' + ext, await fetchFile(new Blob([file.buffer], { type: file.type })));
+    await ffmpeg.exec(['-i', 'input.' + ext, '-ss', String(start), '-to', String(end), '-c', 'copy', 'output_trim.' + ext]);
+    const data = await ffmpeg.readFile('output_trim.' + ext);
+    lastOutput = { data, name: 'trimmed_' + file.name };
+    showToast('✅ Trimmed! Choose format and export.');
+    document.getElementById('export-section').classList.remove('hidden');
+  } catch(e) { showToast('❌ Trim failed: ' + e.message); console.error(e); }
+});
+
+// ─── Cut ──────────────────────────────────────────────────
+document.getElementById('btn-cut').addEventListener('click', async () => {
+  if (!activeRegion) return showToast('⚠ No region selected');
+  if (!loadedFiles.length) return showToast('⚠ No file loaded');
+  try {
+    await loadFFmpeg();
+    const { start, end } = activeRegion;
+    const file = loadedFiles[0];
+    const dur  = wavesurfer.getDuration();
+    const ext  = file.name.split('.').pop();
+    const src  = new Blob([file.buffer], { type: file.type });
+    await ffmpeg.writeFile('input.' + ext, await fetchFile(src));
+    const parts = [];
+    if (start > 0.01) {
+      await ffmpeg.exec(['-i','input.'+ext,'-ss','0','-to',String(start),'-c','copy','part1.'+ext]);
+      parts.push("file 'part1." + ext + "'");
+    }
+    if (end < dur - 0.01) {
+      await ffmpeg.exec(['-i','input.'+ext,'-ss',String(end),'-to',String(dur),'-c','copy','part2.'+ext]);
+      parts.push("file 'part2." + ext + "'");
+    }
+    if (!parts.length) return showToast('⚠ Nothing left after cut');
+    await ffmpeg.writeFile('list.txt', new TextEncoder().encode(parts.join('\n')));
+    await ffmpeg.exec(['-f','concat','-safe','0','-i','list.txt','-c','copy','output_cut.'+ext]);
+    const data = await ffmpeg.readFile('output_cut.' + ext);
+    lastOutput = { data, name: 'cut_' + file.name };
+    showToast('✅ Cut! Choose format and export.');
+    document.getElementById('export-section').classList.remove('hidden');
+  } catch(e) { showToast('❌ Cut failed: ' + e.message); console.error(e); }
+});
+
+// ─── Merge ────────────────────────────────────────────────
+document.getElementById('btn-merge').addEventListener('click', async () => {
+  if (loadedFiles.length < 2) return showToast('⚠ Load at least 2 files to merge');
+  try {
+    await loadFFmpeg();
+    let listContent = '';
+    for (let i = 0; i < loadedFiles.length; i++) {
+      const f = loadedFiles[i];
+      const ext = f.name.split('.').pop();
+      const fname = `merge${i}.${ext}`;
+      await ffmpeg.writeFile(fname, await fetchFile(new Blob([f.buffer], { type: f.type })));
+      listContent += `file '${fname}'\n`;
+    }
+    await ffmpeg.writeFile('mergelist.txt', new TextEncoder().encode(listContent));
+    await ffmpeg.exec(['-f','concat','-safe','0','-i','mergelist.txt','-c','copy','output_merge.mp3']);
+    const data = await ffmpeg.readFile('output_merge.mp3');
+    lastOutput = { data, name: 'merged.mp3' };
+    showToast('✅ Merged! Choose format and export.');
+    document.getElementById('export-section').classList.remove('hidden');
+  } catch(e) { showToast('❌ Merge failed: ' + e.message); console.error(e); }
+});
+
+// ─── Export & Download ────────────────────────────────────
+document.getElementById('btn-export').addEventListener('click', async () => {
+  if (!lastOutput) return showToast('⚠ Nothing to export — trim, cut or merge first');
+  try {
+    await loadFFmpeg();
+    const format  = document.getElementById('format-select').value;
+    const mimeMap = { mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg' };
+    const progressWrap = document.getElementById('progress-wrap');
+    const progressFill = document.getElementById('progress-fill');
+    const progressLabel= document.getElementById('progress-label');
+
+    progressWrap.classList.remove('hidden');
+    progressFill.style.width = '0%';
+    progressLabel.textContent = 'Processing…';
+
+    ffmpeg.on('progress', ({ progress }) => {
+      const pct = Math.round(Math.min(progress, 1) * 100);
+      progressFill.style.width = pct + '%';
+      progressLabel.textContent = `Processing… ${pct}%`;
+    });
+
+    await ffmpeg.writeFile('export_in', lastOutput.data);
+    await ffmpeg.exec(['-i', 'export_in', `export_out.${format}`]);
+    const outData = await ffmpeg.readFile(`export_out.${format}`);
+    const blob = new Blob([outData.buffer], { type: mimeMap[format] });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = lastOutput.name.replace(/\.[^.]+$/, '') + '.' + format;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    progressFill.style.width = '100%';
+    progressLabel.textContent = 'Done!';
+    setTimeout(() => progressWrap.classList.add('hidden'), 2000);
+    showToast('✅ Downloaded as ' + format.toUpperCase() + '!');
+  } catch(e) { showToast('❌ Export failed: ' + e.message); console.error(e); }
+});
+</script>
+</body>
+</html>
