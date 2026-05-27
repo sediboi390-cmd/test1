@@ -12,8 +12,6 @@ Claiming work is complete without verification is dishonesty, not efficiency.
 
 **Core principle:** Evidence before claims, always.
 
-**Violating the letter of this rule is violating the spirit of this rule.**
-
 ## The Iron Law
 
 ```
@@ -34,8 +32,6 @@ BEFORE claiming any status or expressing satisfaction:
    - If NO: State actual status with evidence
    - If YES: State claim WITH evidence
 5. ONLY THEN: Make the claim
-
-Skip any step = lying, not verifying
 ```
 
 ## Common Failures
@@ -43,19 +39,16 @@ Skip any step = lying, not verifying
 | Claim | Requires | Not Sufficient |
 |-------|----------|----------------|
 | Tests pass | Test command output: 0 failures | Previous run, "should pass" |
-| Linter clean | Linter output: 0 errors | Partial check, extrapolation |
-| Build succeeds | Build command: exit 0 | Linter passing, logs look good |
+| Build succeeds | Build command: exit 0 | Linter passing |
 | Bug fixed | Test original symptom: passes | Code changed, assumed fixed |
 | Requirements met | Line-by-line checklist | Tests passing |
 
 ## Red Flags — STOP
 
 - Using "should", "probably", "seems to"
-- Expressing satisfaction before verification ("Great!", "Perfect!", "Done!", etc.)
+- Expressing satisfaction before verification ("Great!", "Perfect!", "Done!")
 - About to commit/push/PR without verification
 - Relying on partial verification
-- Thinking "just this once"
-- **ANY wording implying success without having run verification**
 
 ## Rationalization Prevention
 
@@ -64,21 +57,14 @@ Skip any step = lying, not verifying
 | "Should work now" | RUN the verification |
 | "I'm confident" | Confidence ≠ evidence |
 | "Just this once" | No exceptions |
-| "Linter passed" | Linter ≠ compiler |
 | "Partial check is enough" | Partial proves nothing |
 
 ## Key Patterns
 
 **Tests:**
 ```
-✅ [Run test command] [See: 34/34 pass] "All tests pass"
+✅ [Run test command] [See: 34/34 pass] → "All tests pass"
 ❌ "Should pass now" / "Looks correct"
-```
-
-**Build:**
-```
-✅ [Run build] [See: exit 0] "Build passes"
-❌ "Linter passed" (linter doesn't check compilation)
 ```
 
 **Requirements:**
@@ -87,18 +73,8 @@ Skip any step = lying, not verifying
 ❌ "Tests pass, phase complete"
 ```
 
-## When To Apply
-
-**ALWAYS before:**
-- ANY variation of success/completion claims
-- ANY expression of satisfaction
-- Committing, PR creation, task completion
-- Moving to next task
-
 ## The Bottom Line
 
 **No shortcuts for verification.**
 
-Run the command. Read the output. THEN claim the result.
-
-This is non-negotiable.
+Run the command. Read the output. THEN claim the result. This is non-negotiable.

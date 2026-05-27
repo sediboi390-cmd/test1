@@ -6,7 +6,7 @@ inclusion: manual
 
 # Requesting Code Review
 
-Dispatch a code reviewer subagent to catch issues before they cascade. The reviewer gets precisely crafted context for evaluation — never your session's history.
+Dispatch a code reviewer subagent to catch issues before they cascade.
 
 **Core principle:** Review early, review often.
 
@@ -31,15 +31,14 @@ HEAD_SHA=$(git rev-parse HEAD)
 ```
 
 **2. Dispatch code reviewer subagent** with:
-- `{DESCRIPTION}` — Brief summary of what you built
-- `{PLAN_OR_REQUIREMENTS}` — What it should do
-- `{BASE_SHA}` — Starting commit
-- `{HEAD_SHA}` — Ending commit
+- Brief summary of what you built
+- What it should do (requirements/plan)
+- BASE_SHA and HEAD_SHA for diff scope
 
 **3. Act on feedback:**
-- Fix **Critical** issues immediately
-- Fix **Important** issues before proceeding
-- Note **Minor** issues for later
+- Fix Critical issues immediately
+- Fix Important issues before proceeding
+- Note Minor issues for later
 - Push back if reviewer is wrong (with reasoning)
 
 ## Integration with Workflows
@@ -48,10 +47,6 @@ HEAD_SHA=$(git rev-parse HEAD)
 - Review after EACH task
 - Catch issues before they compound
 - Fix before moving to next task
-
-**Executing Plans:**
-- Review after each task or at natural checkpoints
-- Get feedback, apply, continue
 
 **Ad-Hoc Development:**
 - Review before merge
@@ -63,8 +58,3 @@ HEAD_SHA=$(git rev-parse HEAD)
 - Skip review because "it's simple"
 - Ignore Critical issues
 - Proceed with unfixed Important issues
-- Argue with valid technical feedback
-
-**If reviewer wrong:**
-- Push back with technical reasoning
-- Show code/tests that prove it works
