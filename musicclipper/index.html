@@ -70,6 +70,17 @@
     #time-inputs input:focus { outline: 2px solid var(--accent); border-color: transparent; }
     #action-buttons { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 
+    /* Video extractor */
+    #video-drop-zone { border: 2px dashed #f4a261; border-radius: var(--radius); padding: 2rem 1rem; text-align: center; color: var(--text-muted); transition: border-color 0.2s, background 0.2s; cursor: pointer; }
+    #video-drop-zone.dragover { border-color: #e76f51; background: #fff3ee; }
+    #video-drop-zone p { margin: 0.2rem 0; }
+    #video-drop-zone .small { font-size: 0.8rem; }
+    #video-status { margin-top: 1rem; font-size: 0.9rem; color: var(--text-muted); min-height: 1.4em; }
+    #video-extract-progress { margin-top: 0.75rem; }
+    #video-progress-bar { background: var(--bg); border-radius: 999px; overflow: hidden; height: 8px; border: 1px solid var(--border); }
+    #video-progress-fill { height: 100%; background: #f4a261; width: 0%; transition: width 0.3s; }
+    #video-progress-label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.4rem; }
+
     /* Merge */
     #merge-section p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem; }
 
@@ -130,6 +141,22 @@
     <div id="action-buttons">
       <button class="btn btn-primary" id="btn-trim">✂️ Trim (keep selection)</button>
       <button class="btn btn-danger" id="btn-cut">🔪 Cut (remove selection)</button>
+    </div>
+  </section>
+
+  <!-- Video to Audio -->
+  <section id="video-section" class="card">
+    <h2>🎬 Extract Audio from Video</h2>
+    <div id="video-drop-zone">
+      <p>Drag &amp; drop a video file here</p>
+      <p class="small">Supports MP4, MOV, AVI, MKV, WebM and more</p>
+      <label class="btn" style="margin-top:0.75rem;background:#f4a261;color:#fff" for="video-input">Choose Video File</label>
+      <input type="file" id="video-input" accept="video/*" hidden/>
+    </div>
+    <div id="video-status"></div>
+    <div id="video-extract-progress" class="hidden">
+      <div id="video-progress-bar"><div id="video-progress-fill"></div></div>
+      <span id="video-progress-label">Extracting audio…</span>
     </div>
   </section>
 
@@ -434,8 +461,88 @@ document.getElementById('btn-export').addEventListener('click', async () => {
 });
 </script>
 
-<script>
-// ─── COOP/COEP Service Worker (enables SharedArrayBuffer for FFmpeg.wasm) ────
+// ─── Video to Audio Extractor ─────────────────────────────
+const videoInput    = document.getElementById('video-input');
+const videoDropZone = document.getElementById('video-drop-zone');
+const videoStatus   = document.getElementById('video-status');
+
+videoDropZone.addEventListener('dragover', e => { e.preventDefault(); videoDropZone.classList.add('dragover'); });
+videoDropZone.addEventListener('dragleave', () => videoDropZone.classList.remove('dragover'));
+videoDropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  videoDropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) extractAudioFromVideo(file);
+});
+videoInput.addEventListener('change', () => {
+  if (videoInput.files[0]) extractAudioFromVideo(videoInput.files[0]);
+  videoInput.value = '';
+});
+
+async function extractAudioFromVideo(file) {
+  if (!file.type.startsWith('video/')) {
+    showToast('⚠ Not a video file: ' + file.name);
+    return;
+  }
+
+  const progressWrap  = document.getElementById('video-extract-progress');
+  const progressFill  = document.getElementById('video-progress-fill');
+  const progressLabel = document.getElementById('video-progress-label');
+
+  videoStatus.textContent = '⏳ Loading…';
+  progressWrap.classList.remove('hidden');
+  progressFill.style.width = '0%';
+  progressLabel.textContent = 'Extracting audio…';
+
+  try {
+    await loadFFmpeg();
+
+    // track progress
+    const onProgress = ({ progress }) => {
+      const pct = Math.round(Math.min(progress, 1) * 100);
+      progressFill.style.width = pct + '%';
+      progressLabel.textContent = `Extracting… ${pct}%`;
+    };
+    ffmpeg.on('progress', onProgress);
+
+    const videoExt = file.name.split('.').pop().toLowerCase();
+    const outName  = file.name.replace(/\.[^.]+$/, '') + '_audio.mp3';
+
+    videoStatus.textContent = `🎬 Extracting audio from "${file.name}"…`;
+
+    // Write video to FFmpeg virtual FS
+    await ffmpeg.writeFile('video_in.' + videoExt, await fetchFile(new Blob([await file.arrayBuffer()], { type: file.type })));
+
+    // Extract audio — strip video track (-vn), encode as mp3
+    await ffmpeg.exec(['-i', 'video_in.' + videoExt, '-vn', '-acodec', 'libmp3lame', '-q:a', '2', 'extracted_audio.mp3']);
+
+    const data = await ffmpeg.readFile('extracted_audio.mp3');
+    ffmpeg.off('progress', onProgress);
+
+    // Add to file list
+    const audioBuffer = data.buffer;
+    const audioFile   = { name: outName, buffer: audioBuffer, type: 'audio/mpeg' };
+    loadedFiles.push(audioFile);
+    renderFileList();
+
+    // Load into waveform
+    loadFileIntoWaveform(audioFile);
+
+    progressFill.style.width = '100%';
+    progressLabel.textContent = 'Done!';
+    videoStatus.textContent = `✅ Extracted: "${outName}" — loaded into waveform & file list`;
+    setTimeout(() => progressWrap.classList.add('hidden'), 2500);
+    showToast('✅ Audio extracted from video!');
+
+  } catch(e) {
+    progressWrap.classList.add('hidden');
+    videoStatus.textContent = '❌ Extraction failed: ' + e.message;
+    showToast('❌ Extraction failed: ' + e.message);
+    console.error(e);
+  }
+}
+
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./coop-sw.js').then(reg => {
     // If the SW was just installed (first visit), reload so headers take effect
