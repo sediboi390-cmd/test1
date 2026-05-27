@@ -63,9 +63,10 @@ main { max-width:800px; margin:0 auto; padding:1.5rem 1rem 3rem; display:flex; f
 #video-progress-fill { background:#f4a261; }
 .progress-label { font-size:0.8rem; color:var(--text-muted); display:block; margin-top:0.4rem; }
 
-#export-controls { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+#export-controls { display:flex; align-items:flex-end; gap:1rem; flex-wrap:wrap; }
 #export-controls label { display:flex; flex-direction:column; font-size:0.8rem; color:var(--text-muted); gap:0.25rem; font-weight:500; }
-#export-controls select { padding:0.4rem 0.6rem; border:1px solid var(--border); border-radius:6px; font-size:0.9rem; background:var(--surface); }
+#export-controls select { padding:0 0.6rem; border:1px solid var(--border); border-radius:6px; font-size:0.9rem; background:var(--surface); height:38px; }
+#export-controls .btn { height:38px; }
 
 #toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:0.65rem 1.4rem; border-radius:999px; font-size:0.9rem; z-index:9999; max-width:90vw; text-align:center; }
 </style>
@@ -367,19 +368,18 @@ function concatAudioBuffers(buffers) {
 // ─── Trim / Cut / Merge ───────────────────────────────────
 // After any operation, replace the waveform with the result so the user
 // SEES what happened and can continue editing (re-trim, re-cut, etc).
+// We do NOT scroll away — user stays on the waveform and can keep editing.
 function commitResult(audioBuffer, label, sourceName) {
   lastOutput = audioBuffer;
   const newName = label + '_' + (sourceName || 'audio') + '.wav';
   const virtualFile = { name: newName, audioBuffer };
   loadFileIntoWaveform(virtualFile);
   document.getElementById('export-section').classList.remove('hidden');
-  // Briefly flash the export section so the user notices it
-  const exp = document.getElementById('export-section');
-  exp.style.transition = 'box-shadow 0.4s';
-  exp.style.boxShadow = '0 0 0 3px var(--success)';
-  setTimeout(() => { exp.style.boxShadow = ''; }, 1200);
-  // Scroll the export section into view
-  exp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Briefly flash the waveform card so the user sees the change
+  const wf = document.getElementById('waveform-section');
+  wf.style.transition = 'box-shadow 0.4s';
+  wf.style.boxShadow = '0 0 0 3px var(--success)';
+  setTimeout(() => { wf.style.boxShadow = ''; }, 800);
 }
 
 document.getElementById('btn-trim').addEventListener('click', () => {
