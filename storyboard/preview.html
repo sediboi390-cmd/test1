@@ -121,25 +121,26 @@
     }
     .mode-icon { font-size: 0.95rem; width: 18px; text-align: center; }
 
-    /* sample button */
-    .sample-btn {
+    /* sample button — styled as a quiet mode-tab variant */
+    .sample-tab {
       display: flex; align-items: center; gap: 9px;
-      padding: 10px 12px; border-radius: 7px;
-      cursor: pointer; font-size: 0.78rem; font-weight: 500;
-      color: var(--clay);
-      background: rgba(160,113,79,0.08);
-      border: 1px solid rgba(160,113,79,0.25);
-      transition: all 0.13s;
-      margin-top: 10px; width: 100%;
+      padding: 8px 10px; border-radius: 7px;
+      cursor: pointer; font-size: 0.78rem;
+      color: var(--muted); margin-top: 8px;
+      transition: all 0.13s; border: 1px solid transparent;
+      width: 100%; text-align: left;
+      font-family: 'Inter', sans-serif; background: transparent;
     }
-    .sample-btn:hover {
-      background: rgba(160,113,79,0.14);
-      border-color: rgba(160,113,79,0.4);
+    .sample-tab:hover { background: var(--surface); color: var(--text); }
+    .sample-tab .mode-icon { font-size: 0.95rem; width: 18px; text-align: center; }
+    .sample-divider {
+      height: 1px; background: var(--border);
+      margin: 8px 4px 0;
     }
-    .sample-btn-icon { font-size: 1rem; }
     .sample-hint {
       font-size: 0.62rem; color: var(--muted);
       margin-top: 6px; line-height: 1.5;
+      padding-left: 6px;
     }
 
     .char-chip {
@@ -276,10 +277,11 @@
       <div class="mode-tab"><span class="mode-icon">✨</span> Text to Panel</div>
       <div class="mode-tab"><span class="mode-icon">✏️</span> Sketch</div>
 
-      <button class="sample-btn">
-        <span class="sample-btn-icon">📖</span>
+      <div class="sample-divider"></div>
+      <div class="sample-tab">
+        <span class="mode-icon">📖</span>
         <span>Load Sample</span>
-      </button>
+      </div>
       <div class="sample-hint">See a pre-filled example storyboard with all 4 modes in action.</div>
     </div>
 
@@ -329,7 +331,7 @@
         </div>
         <div class="empty-actions">
           <button class="btn btn-primary">+ Add First Panel</button>
-          <button class="btn btn-export">📖 Load Sample</button>
+          <button class="btn btn-ghost">📖 Load Sample</button>
         </div>
       </div>
     </div>
