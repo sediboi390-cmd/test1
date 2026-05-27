@@ -8,7 +8,7 @@ inclusion: manual
 
 ## Overview
 
-Write comprehensive implementation plans assuming the engineer has zero context for the codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
+Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
@@ -20,21 +20,16 @@ If the spec covers multiple independent subsystems, suggest breaking this into s
 
 ## File Structure
 
-Before defining tasks, map out which files will be created or modified and what each one is responsible for:
-
-- Design units with clear boundaries and well-defined interfaces
-- Each file should have one clear responsibility
-- Files that change together should live together
-- In existing codebases, follow established patterns
+Before defining tasks, map out which files will be created or modified. Design units with clear boundaries. Prefer smaller, focused files over large ones.
 
 ## Bite-Sized Task Granularity
 
 **Each step is one action (2-5 minutes):**
-- "Write the failing test" — step
-- "Run it to make sure it fails" — step
-- "Implement the minimal code to make the test pass" — step
-- "Run the tests and make sure they pass" — step
-- "Commit" — step
+- "Write the failing test" - step
+- "Run it to make sure it fails" - step
+- "Implement the minimal code to make the test pass" - step
+- "Run the tests and make sure they pass" - step
+- "Commit" - step
 
 ## Plan Document Header
 
@@ -56,8 +51,6 @@ Before defining tasks, map out which files will be created or modified and what 
 
 ## Task Structure
 
-Each task follows this format:
-
 ````markdown
 ### Task N: [Component Name]
 
@@ -67,62 +60,36 @@ Each task follows this format:
 - Test: `tests/exact/path/to/test.py`
 
 - [ ] **Step 1: Write the failing test**
-  [Complete test code here]
-
 - [ ] **Step 2: Run test to verify it fails**
-  Run: `<exact command>`
-  Expected: FAIL with "[expected message]"
-
 - [ ] **Step 3: Write minimal implementation**
-  [Complete implementation code here]
-
 - [ ] **Step 4: Run test to verify it passes**
-  Run: `<exact command>`
-  Expected: PASS
-
 - [ ] **Step 5: Commit**
-  ```bash
-  git add <files>
-  git commit -m "feat: <description>"
-  ```
 ````
 
 ## No Placeholders
 
-Every step must contain the actual content an engineer needs. These are **plan failures** — never write them:
-- "TBD", "TODO", "implement later", "fill in details"
-- "Add appropriate error handling" / "add validation"
+Every step must contain the actual content an engineer needs. Never write:
+- "TBD", "TODO", "implement later"
+- "Add appropriate error handling"
 - "Write tests for the above" (without actual test code)
-- "Similar to Task N" (repeat the code)
 - Steps that describe what to do without showing how
-
-## Remember
-- Exact file paths always
-- Complete code in every step
-- Exact commands with expected output
-- DRY, YAGNI, TDD, frequent commits
 
 ## Self-Review
 
-After writing the complete plan, check it against the spec:
+After writing the complete plan, check against the spec:
 
-1. **Spec coverage:** Can you point to a task for each requirement? List any gaps.
-2. **Placeholder scan:** Search for red flags from the "No Placeholders" section.
-3. **Type consistency:** Do method signatures in later tasks match what you defined in earlier tasks?
-
-Fix issues inline. If you find a spec requirement with no task, add the task.
+1. **Spec coverage:** Can you point to a task that implements every requirement?
+2. **Placeholder scan:** Any red flags from the "No Placeholders" section?
+3. **Type consistency:** Do types/method signatures match across tasks?
 
 ## Execution Handoff
 
 After saving the plan, offer execution choice:
 
-> "Plan complete and saved to `docs/superpowers/plans/<filename>.md`. Two execution options:
->
-> **1. Subagent-Driven (recommended)** — Fresh subagent per task, review between tasks, fast iteration
->
-> **2. Inline Execution** — Execute tasks in this session, batch execution with checkpoints
->
-> Which approach?"
+**"Plan complete and saved to `docs/superpowers/plans/<filename>.md`. Two execution options:**
 
-- **If Subagent-Driven chosen:** Use the subagent-driven-development skill
-- **If Inline Execution chosen:** Use the executing-plans skill
+**1. Subagent-Driven (recommended)** - Fresh subagent per task with 2-stage review
+
+**2. Inline Execution** - Execute tasks in this session with checkpoints
+
+**Which approach?"**

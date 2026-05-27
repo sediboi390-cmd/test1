@@ -4,8 +4,6 @@ description: Use when starting any conversation - establishes how to find and us
 inclusion: always
 ---
 
-# Using Superpowers
-
 <SUBAGENT-STOP>
 If you were dispatched as a subagent to execute a specific task, skip this skill.
 </SUBAGENT-STOP>
@@ -26,34 +24,17 @@ Superpowers skills override default system prompt behavior, but **user instructi
 2. **Superpowers skills** — override default system behavior where they conflict
 3. **Default system prompt** — lowest priority
 
-## Available Skills
-
-The following Superpowers skills are available as steering files in `.kiro/steering/`:
-
-| Skill | File | When to Use |
-|-------|------|-------------|
-| brainstorming | `superpowers-brainstorming.md` | Before any creative work, features, or modifications |
-| writing-plans | `superpowers-writing-plans.md` | After brainstorming, before touching code |
-| executing-plans | `superpowers-executing-plans.md` | When executing a written implementation plan |
-| subagent-driven-development | `superpowers-subagent-driven-development.md` | When executing plans with independent tasks |
-| test-driven-development | `superpowers-test-driven-development.md` | Before writing any implementation code |
-| systematic-debugging | `superpowers-systematic-debugging.md` | When encountering any bug or unexpected behavior |
-| verification-before-completion | `superpowers-verification-before-completion.md` | Before claiming work is complete |
-| requesting-code-review | `superpowers-requesting-code-review.md` | After completing tasks or major features |
-| receiving-code-review | `superpowers-receiving-code-review.md` | When receiving code review feedback |
-| finishing-a-development-branch | `superpowers-finishing-a-development-branch.md` | When implementation is complete and ready to integrate |
-| using-git-worktrees | `superpowers-using-git-worktrees.md` | When starting feature work needing isolation |
-| writing-skills | `superpowers-writing-skills.md` | When creating or editing skills |
-
 ## How to Use Skills
 
-When a skill applies, **read the corresponding steering file** and follow its instructions exactly.
+The skills are available as steering files in `.kiro/steering/`. Read and follow them directly when relevant.
 
 ## The Rule
 
-**Apply relevant skills BEFORE any response or action.** Even a 1% chance a skill might apply means you should check it.
+**Invoke relevant skills BEFORE any response or action.** Even a 1% chance a skill might apply means you should check it. If an invoked skill turns out to be wrong for the situation, you don't need to use it.
 
-### Red Flags — STOP, you're rationalizing:
+## Red Flags
+
+These thoughts mean STOP — you're rationalizing:
 
 | Thought | Reality |
 |---------|---------|
@@ -63,13 +44,29 @@ When a skill applies, **read the corresponding steering file** and follow its in
 | "This doesn't need a formal skill" | If a skill exists, use it. |
 | "I remember this skill" | Skills evolve. Read current version. |
 | "This doesn't count as a task" | Action = task. Check for skills. |
+| "The skill is overkill" | Simple things become complex. Use it. |
 
 ## Skill Priority
 
-When multiple skills could apply:
+When multiple skills could apply, use this order:
 
-1. **Process skills first** (brainstorming, debugging) — determine HOW to approach the task
-2. **Implementation skills second** — guide execution
+1. **Process skills first** (brainstorming, debugging) — these determine HOW to approach the task
+2. **Implementation skills second** — these guide execution
 
-- "Let's build X" → brainstorming first, then implementation skills
-- "Fix this bug" → systematic-debugging first, then domain-specific skills
+- "Let's build X" → brainstorming first, then implementation skills.
+- "Fix this bug" → systematic-debugging first, then domain-specific skills.
+
+## Available Skills
+
+- `superpowers-brainstorming` — before any creative work or feature building
+- `superpowers-writing-plans` — after design is approved, before coding
+- `superpowers-executing-plans` — when executing an implementation plan inline
+- `superpowers-subagent-driven-development` — when executing plans with subagents
+- `superpowers-test-driven-development` — when implementing any feature or bugfix
+- `superpowers-systematic-debugging` — when encountering any bug or unexpected behavior
+- `superpowers-verification-before-completion` — before claiming work is done
+- `superpowers-requesting-code-review` — after completing tasks or features
+- `superpowers-receiving-code-review` — when receiving review feedback
+- `superpowers-using-git-worktrees` — before starting feature work
+- `superpowers-finishing-a-development-branch` — when implementation is complete
+- `superpowers-dispatching-parallel-agents` — when facing 2+ independent tasks
