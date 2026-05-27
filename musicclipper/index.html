@@ -6,8 +6,8 @@
   <title>Music Clipper</title>
   <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
   <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
-  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
   <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+  <!-- FFmpeg loaded dynamically as blob to bypass GitHub Pages CORS worker restriction -->
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -331,36 +331,41 @@ document.getElementById('btn-select-all').addEventListener('click', () => {
 });
 
 // ─── FFmpeg ───────────────────────────────────────────────
-const { FFmpeg } = FFmpegWASM;
-const { fetchFile } = FFmpegUtil;
-const ffmpeg = new FFmpeg();
-let ffmpegReady = false;
-let lastOutput  = null;
+// Load FFmpeg library itself as a blob so its internal worker URL
+// is rewritten to same-origin, bypassing GitHub Pages CORS block.
+const FFMPEG_CDN  = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js';
+const CORE_CDN    = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+
+let ffmpeg        = null;
+let fetchFile     = null;
+let ffmpegReady   = false;
+let lastOutput    = null;
+
+const toBlobURL = async (url, mime) => {
+  const r = await fetch(url);
+  const t = await r.text();
+  return URL.createObjectURL(new Blob([t], { type: mime }));
+};
 
 async function loadFFmpeg() {
   if (ffmpegReady) return;
-  showToast('⏳ Loading FFmpeg (first time only)…', 10000);
+  showToast('⏳ Loading FFmpeg (first time only)…', 15000);
+
+  // 1. Load the ffmpeg.js library as a blob — this makes its
+  //    internal dynamic import() of 814.ffmpeg.js also same-origin.
+  const ffmpegBlobURL = await toBlobURL(FFMPEG_CDN, 'text/javascript');
+  const mod = await import(ffmpegBlobURL);
+  const FFmpeg = mod.FFmpeg;
+  fetchFile = (await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js')).fetchFile;
+
+  ffmpeg = new FFmpeg();
   ffmpeg.on('log', ({ message }) => console.log('[ffmpeg]', message));
 
-  // Use jsdelivr CDN (has proper CORS headers) + wrap everything as blob URLs
-  // so GitHub Pages same-origin restriction on Workers is bypassed.
-  const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
-  const ffmpegBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd';
-
-  const toBlobURL = async (url, mimeType) => {
-    const res = await fetch(url);
-    const text = await res.text();
-    return URL.createObjectURL(new Blob([text], { type: mimeType }));
-  };
-
-  // The 814.ffmpeg.js worker chunk must also be a blob URL
-  const workerBlobURL = await toBlobURL(`${ffmpegBase}/814.ffmpeg.js`, 'text/javascript');
-
+  // 2. Load core/wasm/worker all as blobs too
   await ffmpeg.load({
-    coreURL:         await toBlobURL(`${baseURL}/ffmpeg-core.js`,       'text/javascript'),
-    wasmURL:         `${baseURL}/ffmpeg-core.wasm`,
-    workerURL:       await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
-    classWorkerURL:  workerBlobURL,
+    coreURL:   await toBlobURL(`${CORE_CDN}/ffmpeg-core.js`,       'text/javascript'),
+    wasmURL:   await toBlobURL(`${CORE_CDN}/ffmpeg-core.wasm`,      'application/wasm'),
+    workerURL: await toBlobURL(`${CORE_CDN}/ffmpeg-core.worker.js`, 'text/javascript'),
   });
 
   ffmpegReady = true;
