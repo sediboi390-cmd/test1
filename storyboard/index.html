@@ -1,1294 +1,1143 @@
 <!DOCTYPE html>
+<!-- Shot Builder Studio v1.0 (Phase 1) — 2026-05-27 -->
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Animated-Realism Fighting Storyboard</title>
+  <title>Shot Builder Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Roboto+Mono:wght@400;500&display=swap');
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg:       #F7F6F3;
+      --surface:  #FFFFFF;
+      --border:   #E8E5DF;
+      --sidebar:  #F2F0EC;
+      --text:     #2D2D2D;
+      --muted:    #9A9590;
+      --teal:     #4A8C8C;
+      --sage:     #6B8F71;
+      --clay:     #A0714F;
+      --lavender: #7B7BA8;
+      --red-soft: #C0524A;
+    }
+
     body {
-      background: #0a0a0f;
-      color: #e8e8f0;
-      font-family: 'Roboto Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
       min-height: 100vh;
     }
 
-    header {
-      background: linear-gradient(135deg, #0d0d1a 0%, #1a0a2e 50%, #0d0d1a 100%);
-      border-bottom: 2px solid #ff3c5a;
-      padding: 32px 40px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    header::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: repeating-linear-gradient(
-        0deg, transparent, transparent 2px,
-        rgba(255,60,90,0.04) 2px, rgba(255,60,90,0.04) 4px
-      );
-      pointer-events: none;
-    }
-
-    header h1 {
-      font-family: 'Rajdhani', sans-serif;
-      font-size: clamp(2rem, 5vw, 3.5rem);
-      font-weight: 700;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      background: linear-gradient(90deg, #ff3c5a, #ff9800, #ff3c5a);
-      background-size: 200% auto;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      animation: shimmer 3s linear infinite;
-    }
-
-    @keyframes shimmer {
-      0% { background-position: 0% center; }
-      100% { background-position: 200% center; }
-    }
-
-    header p {
-      margin-top: 8px;
-      font-size: 0.8rem;
-      letter-spacing: 0.3em;
-      color: #888;
-      text-transform: uppercase;
-    }
-
-    .meta-bar {
+    /* HEADER */
+    .app-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 52px;
       display: flex;
-      justify-content: center;
-      gap: 40px;
-      flex-wrap: wrap;
-      padding: 16px 40px;
-      background: #0f0f1a;
-      border-bottom: 1px solid #222;
-      font-size: 0.72rem;
-      letter-spacing: 0.15em;
-      color: #aaa;
+      align-items: center;
+      justify-content: space-between;
     }
-
-    .meta-bar span strong {
-      color: #ff9800;
-    }
-
-
-    .timeline {
+    .app-logo {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text);
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 20px 40px;
-      background: #0a0a12;
-      border-bottom: 1px solid #1a1a2e;
+    }
+
+    .app-logo-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--teal);
+    }
+    .header-right { display: flex; gap: 8px; align-items: center; }
+    .project-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+    }
+    .project-label span { color: var(--teal); font-weight: 500; }
+
+    /* BUTTONS */
+    .btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      transition: all 0.15s;
+    }
+    .btn-ghost { background: var(--surface); color: var(--muted); }
+    .btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
+    .btn-primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+    .btn-primary:hover { background: #3d7878; }
+    .btn-export { background: var(--surface); border-color: var(--border); color: var(--clay); }
+    .btn-export:hover { border-color: var(--clay); background: #fdf7f3; }
+
+    .app-body { display: flex; height: calc(100vh - 52px); }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 220px; min-width: 220px;
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-label {
+      font-size: 0.62rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+
+    .mode-tab {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px; border-radius: 7px;
+      cursor: pointer; font-size: 0.78rem;
+      color: var(--muted); margin-bottom: 2px;
+      transition: all 0.13s; border: 1px solid transparent;
+    }
+    .mode-tab:hover { background: var(--surface); color: var(--text); }
+    .mode-tab.active {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--teal); font-weight: 500;
+    }
+    .mode-icon { font-size: 0.95rem; width: 18px; text-align: center; }
+
+    .sample-tab {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px; border-radius: 7px;
+      cursor: pointer; font-size: 0.78rem;
+      color: var(--muted); margin-top: 8px;
+      transition: all 0.13s; border: 1px solid transparent;
+    }
+    .sample-tab:hover { background: var(--surface); color: var(--text); }
+    .sample-divider { height: 1px; background: var(--border); margin: 8px 4px 0; }
+    .sample-hint { font-size: 0.62rem; color: var(--muted); margin-top: 6px; line-height: 1.5; padding-left: 6px; }
+
+    .char-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 20px;
+      font-size: 0.68rem; margin: 2px 2px 2px 0;
+      border: 1px solid var(--border);
+      background: var(--surface); color: var(--text);
+    }
+    .char-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    .export-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; border-radius: 7px;
+      font-size: 0.72rem; color: var(--muted);
+      cursor: pointer; margin-bottom: 2px;
+      transition: all 0.13s;
+    }
+    .export-item:hover { background: var(--surface); color: var(--teal); }
+    .export-icon { font-size: 0.85rem; }
+
+    .project-stat { font-size: 0.68rem; color: var(--muted); line-height: 2; display: flex; justify-content: space-between; align-items: center; }
+    .project-stat span { color: var(--text); font-weight: 500; }
+
+    .ratio-select {
+      font-family: 'Inter', sans-serif; font-size: 0.65rem;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); padding: 2px 6px; border-radius: 4px;
+      cursor: pointer; outline: none;
+    }
+    .ratio-select:hover, .ratio-select:focus { border-color: var(--teal); }
+
+
+    /* MAIN */
+    .main-canvas { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .timeline-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex; align-items: center; gap: 6px;
+      min-height: 50px;
       overflow-x: auto;
     }
-
-    .timeline-dot {
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      background: #ff3c5a;
-      flex-shrink: 0;
-      box-shadow: 0 0 8px #ff3c5a;
+    .timeline-bar-empty { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.02em; }
+    .tl-act-pill {
+      font-size: 0.62rem; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 20px;
+      border: 1px solid; white-space: nowrap;
     }
-
-    .timeline-line {
-      height: 2px;
-      flex: 1;
-      min-width: 30px;
-      background: linear-gradient(90deg, #ff3c5a, #ff9800);
-      opacity: 0.4;
+    .tl-act-1 { color: var(--teal); border-color: rgba(74,140,140,0.3); background: rgba(74,140,140,0.07); }
+    .tl-act-2 { color: var(--sage); border-color: rgba(107,143,113,0.3); background: rgba(107,143,113,0.07); }
+    .tl-line { height: 1px; width: 28px; flex-shrink: 0; background: var(--border); }
+    .tl-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--border); }
+    .tl-thumb {
+      width: 48px; height: 32px; border-radius: 5px;
+      border: 1px solid var(--border); background: var(--bg);
+      flex-shrink: 0; cursor: pointer; overflow: hidden;
     }
-
-    .timeline-label {
-      font-size: 0.6rem;
-      color: #666;
-      letter-spacing: 0.1em;
-      white-space: nowrap;
-      text-align: center;
-      margin-top: 4px;
+    .tl-thumb.active { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(74,140,140,0.15); }
+    .tl-thumb svg { width: 100%; height: 100%; }
+    .tl-add {
+      width: 32px; height: 32px; border-radius: 5px;
+      border: 1px dashed var(--border); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 1rem; cursor: pointer;
     }
+    .tl-add:hover { border-color: var(--teal); color: var(--teal); }
 
-    .timeline-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      flex-shrink: 0;
+    .view-toggle-row {
+      padding: 12px 24px 0;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px;
     }
-
-    main {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 40px 20px;
+    .view-toggle {
+      display: inline-flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 2px;
     }
-
-    .act-title {
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 1.6rem;
-      font-weight: 700;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #ff3c5a;
-      border-left: 4px solid #ff3c5a;
-      padding-left: 16px;
-      margin: 40px 0 24px;
+    .view-tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 5px;
+      font-size: 0.72rem; font-weight: 500;
+      color: var(--muted); cursor: pointer;
+      background: transparent; border: none;
+      font-family: 'Inter', sans-serif;
     }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active { background: var(--bg); color: var(--teal); }
+    .view-tab-icon { font-size: 0.85rem; }
+    .view-meta { font-size: 0.65rem; color: var(--muted); }
+    .view-meta strong { color: var(--text); font-weight: 500; }
 
-    .scene-grid {
+    .panel-grid { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+    .empty-state {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100%; min-height: 400px;
+      text-align: center; padding: 40px 20px;
+    }
+    .empty-icon { font-size: 3rem; color: var(--border); margin-bottom: 16px; }
+    .empty-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.4rem; font-weight: 500;
+      color: var(--text); margin-bottom: 8px;
+    }
+    .empty-desc {
+      font-size: 0.85rem; color: var(--muted);
+      max-width: 420px; line-height: 1.6; margin-bottom: 24px;
+    }
+    .empty-actions { display: flex; gap: 10px; }
+    .empty-actions .btn { padding: 10px 20px; font-size: 0.78rem; }
+
+    .act-heading {
+      font-size: 0.7rem; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .act-heading::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 24px;
-      margin-bottom: 40px;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 14px; margin-bottom: 28px;
     }
 
-    .panel {
-      background: #0f0f1c;
-      border: 1px solid #1e1e30;
-      border-radius: 4px;
-      overflow: hidden;
+    .panel-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+      cursor: pointer; transition: all 0.15s;
+      animation: fadeUp 0.35s ease both;
       position: relative;
-      transition: transform 0.2s, box-shadow 0.2s;
     }
-
-    .panel:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 32px rgba(255, 60, 90, 0.2);
+    .panel-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); transform: translateY(-2px); }
+    .panel-card.selected { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(74,140,140,0.18); }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-
-    .panel-number {
-      position: absolute;
-      top: 10px; left: 10px;
-      background: rgba(0,0,0,0.7);
-      color: #ff9800;
-      font-size: 0.65rem;
-      letter-spacing: 0.2em;
-      padding: 3px 8px;
-      border: 1px solid #ff9800;
-      z-index: 10;
+    .panel-scene { width: 100%; height: 160px; background: #EDECEA; position: relative; overflow: hidden; }
+    .panel-scene svg { width: 100%; height: 100%; }
+    .panel-badge {
+      position: absolute; top: 8px; left: 8px;
+      background: rgba(255,255,255,0.88);
+      color: var(--muted); font-size: 0.58rem;
+      font-weight: 600; letter-spacing: 0.08em;
+      padding: 2px 7px; border-radius: 4px;
+      border: 1px solid var(--border); z-index: 5;
     }
-
-    .panel-duration {
-      position: absolute;
-      top: 10px; right: 10px;
-      background: rgba(0,0,0,0.7);
-      color: #aaa;
-      font-size: 0.62rem;
-      letter-spacing: 0.1em;
-      padding: 3px 8px;
-      border: 1px solid #333;
-      z-index: 10;
+    .panel-dur {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(255,255,255,0.88);
+      color: var(--muted); font-size: 0.58rem;
+      padding: 2px 7px; border-radius: 4px;
+      border: 1px solid var(--border); z-index: 5;
     }
-
-
-    /* ── Scene Illustrations (SVG-based animated-realism panels) ── */
-    .scene-canvas {
-      width: 100%;
-      height: 220px;
-      position: relative;
-      overflow: hidden;
-      background: #050508;
+    .panel-mode {
+      position: absolute; bottom: 8px; right: 8px;
+      font-size: 0.58rem; font-weight: 500;
+      padding: 2px 7px; border-radius: 4px; z-index: 5;
     }
+    .m-card { background: rgba(74,140,140,0.12); color: var(--teal); }
+    .m-template { background: rgba(107,143,113,0.12); color: var(--sage); }
+    .m-text { background: rgba(123,123,168,0.12); color: var(--lavender); }
+    .m-sketch { background: rgba(160,113,79,0.12); color: var(--clay); }
 
-    .scene-canvas svg {
-      width: 100%;
-      height: 100%;
-    }
 
-    /* motion blur overlay */
-    .motion-blur {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      pointer-events: none;
-      animation: flickerFlash 6s infinite;
-      opacity: 0;
-    }
-
-    @keyframes flickerFlash {
-      0%, 92%, 100% { opacity: 0; }
-      93% { opacity: 0.15; background: white; }
-      95% { opacity: 0; }
-      97% { opacity: 0.1; background: white; }
-    }
-
-    .panel-info {
-      padding: 14px 16px;
-      border-top: 1px solid #1a1a2e;
-    }
-
-    .scene-label {
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 1rem;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.1em;
-      margin-bottom: 6px;
-    }
-
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-
+    .panel-body { padding: 12px 14px; }
+    .panel-title { font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 7px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
     .tag {
-      font-size: 0.6rem;
-      letter-spacing: 0.15em;
-      padding: 2px 8px;
-      border-radius: 2px;
-      text-transform: uppercase;
+      font-size: 0.6rem; font-weight: 500;
+      padding: 2px 8px; border-radius: 20px;
     }
-
-    .tag-cam  { background: rgba(255,152,0,0.15); color: #ff9800; border: 1px solid #ff980040; }
-    .tag-move { background: rgba(255,60,90,0.15);  color: #ff3c5a; border: 1px solid #ff3c5a40; }
-    .tag-lens { background: rgba(100,200,255,0.12); color: #64c8ff; border: 1px solid #64c8ff30; }
-    .tag-fx   { background: rgba(180,100,255,0.12); color: #c080ff; border: 1px solid #c080ff30; }
-
-    .scene-desc {
-      font-size: 0.72rem;
-      color: #999;
-      line-height: 1.6;
+    .t-shot { background: rgba(74,140,140,0.1); color: var(--teal); }
+    .t-move { background: rgba(107,143,113,0.1); color: var(--sage); }
+    .t-emotion { background: rgba(123,123,168,0.1); color: var(--lavender); }
+    .t-light { background: rgba(160,113,79,0.1); color: var(--clay); }
+    .panel-desc { font-size: 0.68rem; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+    .panel-actions {
+      display: flex; gap: 6px; justify-content: flex-end;
+      padding-top: 8px; border-top: 1px solid var(--border);
     }
-
-    .motion-guide {
-      margin-top: 10px;
-      padding: 8px 10px;
-      background: rgba(255,60,90,0.06);
-      border-left: 2px solid #ff3c5a;
-      font-size: 0.68rem;
-      color: #cc8888;
-      line-height: 1.5;
+    .panel-btn {
+      font-family: 'Inter', sans-serif; font-size: 0.65rem; font-weight: 500;
+      padding: 4px 10px; border-radius: 6px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--bg); color: var(--muted);
     }
+    .panel-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--surface); }
+    .panel-btn.del:hover { border-color: var(--red-soft); color: var(--red-soft); }
 
-    .arrow { color: #ff9800; margin-right: 4px; }
+    .add-card {
+      background: transparent; border: 1.5px dashed var(--border);
+      border-radius: 10px; min-height: 240px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px;
+      cursor: pointer; color: var(--muted);
+    }
+    .add-card:hover { border-color: var(--teal); color: var(--teal); background: rgba(74,140,140,0.04); }
+    .add-card-icon { font-size: 1.6rem; }
+    .add-card-label { font-size: 0.68rem; font-weight: 500; }
 
-    /* ── Sound / Audio hint bar ── */
-    .audio-bar {
-      display: flex;
+    /* Outline view */
+    .outline-list { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px; }
+    .outline-row { display: flex; gap: 14px; padding: 12px 14px; border-radius: 7px; cursor: pointer; transition: background 0.13s; }
+    .outline-row:hover { background: var(--bg); }
+    .outline-num { font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--muted); width: 28px; }
+    .outline-body { flex: 1; }
+    .outline-title { font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .outline-dur { font-family: 'Inter', sans-serif; font-size: 0.65rem; font-weight: 400; color: var(--muted); margin-left: 6px; }
+    .outline-vo { font-size: 0.7rem; color: var(--muted); line-height: 1.5; font-style: italic; }
+    .outline-meta { font-size: 0.65rem; color: var(--muted); align-self: center; }
+
+    /* Templates */
+    .template-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.13s; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .template-card:hover { border-color: var(--teal); box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .template-name { font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .template-meta { font-size: 0.65rem; color: var(--muted); text-transform: capitalize; }
+
+    /* Editor drawer */
+    .editor-drawer {
+      height: 240px; background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex; flex-direction: column;
+    }
+    .drawer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px; border-bottom: 1px solid var(--border);
+    }
+    .drawer-title { font-size: 0.78rem; font-weight: 600; color: var(--text); }
+    .drawer-subtitle { font-size: 0.65rem; color: var(--muted); margin-top: 1px; }
+    .drawer-body {
+      flex: 1; padding: 12px 20px;
+      display: grid; grid-template-columns: repeat(5, 1fr) 2fr;
+      gap: 12px; overflow-y: auto; align-items: start;
+    }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field-label { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+    .field-select, .field-input {
+      font-family: 'Inter', sans-serif; font-size: 0.72rem;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); padding: 5px 8px; border-radius: 6px;
+      outline: none; width: 100%;
+    }
+    .field-select:focus, .field-input:focus { border-color: var(--teal); }
+    .field-textarea {
+      font-family: 'Inter', sans-serif; font-size: 0.7rem;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); padding: 6px 8px; border-radius: 6px;
+      outline: none; resize: none; width: 100%; height: 56px; line-height: 1.5;
+    }
+    .field-textarea:focus { border-color: var(--teal); }
+    .char-checks { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 2px; }
+    .char-ck {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 0.65rem; padding: 3px 8px; border-radius: 20px;
+      border: 1px solid var(--border); cursor: pointer;
+      color: var(--muted); background: var(--bg);
+    }
+    .char-ck.on { background: rgba(74,140,140,0.08); }
+
+    /* Status bar */
+    .status-bar {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 6px 20px;
+      display: flex; gap: 20px;
+      font-size: 0.62rem; color: var(--muted);
       align-items: center;
-      gap: 8px;
-      margin-top: 10px;
-      font-size: 0.62rem;
-      color: #555;
     }
+    .status-bar b { color: var(--text); font-weight: 500; }
+    .status-bar-right { margin-left: auto; transition: color 0.3s; }
 
-    .audio-icon { color: #ff3c5a; }
-
-    .waveform {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      height: 14px;
+    /* Print styles */
+    @media print {
+      .app-header, .sidebar, .timeline-bar, .view-toggle-row, .editor-drawer, .status-bar, .panel-actions, .add-card { display: none !important; }
+      body { background: white; }
+      .main-canvas { display: block; height: auto; }
+      .app-body { height: auto; display: block; }
+      .panel-grid { padding: 0; overflow: visible; }
+      .panel-card { break-inside: avoid; page-break-inside: avoid; box-shadow: none; }
+      .grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
     }
-
-    .waveform span {
-      display: inline-block;
-      width: 2px;
-      background: #ff3c5a;
-      border-radius: 1px;
-      animation: wave 0.8s ease-in-out infinite alternate;
-    }
-
-    .waveform span:nth-child(2) { animation-delay: 0.1s; }
-    .waveform span:nth-child(3) { animation-delay: 0.2s; }
-    .waveform span:nth-child(4) { animation-delay: 0.3s; }
-    .waveform span:nth-child(5) { animation-delay: 0.4s; }
-
-    @keyframes wave {
-      from { height: 4px; }
-      to   { height: 14px; }
-    }
-
-
-    /* ── Full-width key frame dividers ── */
-    .keyframe-divider {
-      grid-column: 1 / -1;
-      background: linear-gradient(90deg, transparent, rgba(255,60,90,0.15), transparent);
-      border: 1px solid rgba(255,60,90,0.15);
-      border-radius: 2px;
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 0.7rem;
-      letter-spacing: 0.2em;
-      color: #ff3c5a;
-      text-transform: uppercase;
-    }
-
-    .keyframe-divider::before,
-    .keyframe-divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(255,60,90,0.3);
-    }
-
-    footer {
-      text-align: center;
-      padding: 30px;
-      border-top: 1px solid #1a1a2e;
-      font-size: 0.65rem;
-      color: #444;
-      letter-spacing: 0.2em;
-    }
-
-    /* ── Animated entrance ── */
-    .panel {
-      animation: panelIn 0.4s ease both;
-    }
-
-    @keyframes panelIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .panel:nth-child(1)  { animation-delay: 0.05s; }
-    .panel:nth-child(2)  { animation-delay: 0.10s; }
-    .panel:nth-child(3)  { animation-delay: 0.15s; }
-    .panel:nth-child(4)  { animation-delay: 0.20s; }
-    .panel:nth-child(5)  { animation-delay: 0.25s; }
-    .panel:nth-child(6)  { animation-delay: 0.30s; }
-    .panel:nth-child(7)  { animation-delay: 0.35s; }
-    .panel:nth-child(8)  { animation-delay: 0.40s; }
-    .panel:nth-child(9)  { animation-delay: 0.45s; }
-    .panel:nth-child(10) { animation-delay: 0.50s; }
-    .panel:nth-child(11) { animation-delay: 0.55s; }
-    .panel:nth-child(12) { animation-delay: 0.60s; }
-
   </style>
 </head>
 <body>
 
-<header>
-  <h1>&#9876; Shadow Strike — Animated Realism Storyboard</h1>
-  <p>Fight Sequence &nbsp;|&nbsp; Short Film &nbsp;|&nbsp; Animated-Realism Style</p>
+<header class="app-header">
+  <div class="app-logo">
+    <div class="app-logo-dot"></div>
+    Shot Builder Studio
+  </div>
+  <div class="header-right">
+    <div class="project-label">Project: <span id="project-name">Untitled</span></div>
+    <button class="btn btn-ghost" id="btn-undo">Undo</button>
+    <button class="btn btn-primary" id="btn-save">Save</button>
+  </div>
 </header>
 
-<div class="meta-bar">
-  <span><strong>FORMAT</strong> 16:9 &nbsp;2K</span>
-  <span><strong>FPS</strong> 24fps / 60fps slow-mo</span>
-  <span><strong>STYLE</strong> Animated Realism</span>
-  <span><strong>DURATION</strong> ~2 min 30 sec</span>
-  <span><strong>TOTAL SCENES</strong> 12</span>
-  <span><strong>COLOR GRADE</strong> High-contrast, desaturated + rim light</span>
-</div>
-
-<div class="timeline">
-  <div class="timeline-item">
-    <div class="timeline-dot" style="background:#64c8ff;box-shadow:0 0 8px #64c8ff"></div>
-    <div class="timeline-label">ACT I<br/>00:00</div>
-  </div>
-  <div class="timeline-line"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-label">S-01<br/>00:05</div>
-  </div>
-  <div class="timeline-line"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-label">S-02<br/>00:18</div>
-  </div>
-  <div class="timeline-line"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-label">S-03<br/>00:30</div>
-  </div>
-  <div class="timeline-line" style="background:linear-gradient(90deg,#ff9800,#ff3c5a)"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot" style="background:#ff9800;box-shadow:0 0 8px #ff9800"></div>
-    <div class="timeline-label">ACT II<br/>00:45</div>
-  </div>
-  <div class="timeline-line"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-label">S-04<br/>00:50</div>
-  </div>
-  <div class="timeline-line"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-label">S-05<br/>01:05</div>
-  </div>
-  <div class="timeline-line"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-label">S-06<br/>01:20</div>
-  </div>
-  <div class="timeline-line"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-label">S-07<br/>01:35</div>
-  </div>
-  <div class="timeline-line" style="background:linear-gradient(90deg,#ff3c5a,#c080ff)"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot" style="background:#c080ff;box-shadow:0 0 8px #c080ff"></div>
-    <div class="timeline-label">ACT III<br/>01:50</div>
-  </div>
-  <div class="timeline-line"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-label">S-08<br/>01:55</div>
-  </div>
-  <div class="timeline-line"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-label">S-09<br/>02:08</div>
-  </div>
-  <div class="timeline-line"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-label">S-10<br/>02:18</div>
-  </div>
-  <div class="timeline-line"></div>
-  <div class="timeline-item">
-    <div class="timeline-dot" style="background:#ff3c5a;box-shadow:0 0 8px #ff3c5a"></div>
-    <div class="timeline-label">END<br/>02:30</div>
+<div class="app-body">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-canvas">
+    <div class="timeline-bar" id="timeline-bar"></div>
+    <div class="view-toggle-row" id="view-toggle-row"></div>
+    <div class="panel-grid" id="panel-grid"></div>
+    <div class="editor-drawer" id="editor-drawer" style="display:none"></div>
+    <div class="status-bar" id="status-bar"></div>
   </div>
 </div>
 
-<main>
+<script>
+
+'use strict';
+
+// ====== STATE ======
+const STORAGE_KEY = 'shotBuilderStudio.project.v1';
+
+const App = {
+  project: {
+    name: 'Untitled',
+    aspectRatio: '16:9',
+    characters: [],
+    panels: [],
+    acts: ['Act I'],
+  },
+  ui: {
+    view: 'grid',
+    activeMode: 'card',
+    selectedPanelId: null,
+  },
+};
+
+const TEMPLATES = [
+  { id: 't-wide-establish', label: 'Wide Establishing Shot', shotType: 'wide',     cameraMove: 'static',   cameraAngle: 'eye',  background: 'street', lighting: 'sunset',    emotion: 'neutral', duration: 8 },
+  { id: 't-talking-head',   label: 'Talking Head',           shotType: 'medium',   cameraMove: 'static',   cameraAngle: 'eye',  background: 'studio', lighting: 'spotlight', emotion: 'neutral', duration: 10 },
+  { id: 't-product-reveal', label: 'Product Reveal',         shotType: 'close-up', cameraMove: 'zoom',     cameraAngle: 'low',  background: 'studio', lighting: 'spotlight', emotion: 'excited', duration: 5 },
+  { id: 't-hook-opener',    label: 'Hook Opener',            shotType: 'close-up', cameraMove: 'zoom',     cameraAngle: 'eye',  background: 'studio', lighting: 'bright',    emotion: 'tense',   duration: 3 },
+  { id: 't-cta-closer',     label: 'CTA Closer',             shotType: 'medium',   cameraMove: 'static',   cameraAngle: 'eye',  background: 'studio', lighting: 'bright',    emotion: 'happy',   duration: 4 },
+  { id: 't-step-callout',   label: 'Tutorial Step',          shotType: 'medium',   cameraMove: 'static',   cameraAngle: 'high', background: 'studio', lighting: 'bright',    emotion: 'neutral', duration: 6 },
+];
+
+const CHARACTER_COLORS = ['#4A8C8C', '#6B8F71', '#A0714F', '#7B7BA8', '#C0524A', '#9A9590'];
+
+const SCENE_BG_BY_MODE = {
+  card: '#EDECEA', template: '#EAE9F0', text: '#E8F0E9', sketch: '#F5EFE9',
+};
+const BG_TINT_BY_LIGHTING = {
+  dark: '#D9D5CF', bright: '#FFFFFF', neon: '#DFF0EF', sunset: '#F5E2D0', spotlight: '#FFFDE7', silhouette: '#C9C5BF',
+};
+
+// ====== HELPERS ======
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function capitalize(s) { return String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1); }
+function totalDuration() { return App.project.panels.reduce((sum, p) => sum + (Number(p.duration) || 0), 0); }
+function formatDuration(s) { if (s < 60) return s + 's'; return Math.floor(s / 60) + 'm ' + (s % 60) + 's'; }
+function totalVoiceoverWords() {
+  return App.project.panels.reduce((sum, p) => {
+    const w = (p.voiceover || '').trim();
+    return sum + (w ? w.split(/\s+/).length : 0);
+  }, 0);
+}
+function aspectFor(ratio) {
+  if (ratio === '9:16') return { w: 90, h: 160 };
+  if (ratio === '1:1')  return { w: 160, h: 160 };
+  return { w: 400, h: 160 };
+}
+function selectOptions(opts, selected) {
+  return opts.map(o => '<option value="' + o + '"' + (o === selected ? ' selected' : '') + '>' + capitalize(o) + '</option>').join('');
+}
+
+// ====== PERSISTENCE ======
+function saveToStorage() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(App.project)); }
+  catch (e) { console.warn('Save failed:', e); }
+}
+function loadFromStorage() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return false;
+  try {
+    const proj = JSON.parse(raw);
+    // Basic shape validation
+    if (proj && Array.isArray(proj.panels) && Array.isArray(proj.acts)) {
+      App.project = proj;
+      // Backfill new fields for older saves
+      App.project.characters = App.project.characters || [];
+      App.project.aspectRatio = App.project.aspectRatio || '16:9';
+      return true;
+    }
+  } catch (e) { console.warn('Load failed:', e); }
+  return false;
+}
+setInterval(saveToStorage, 30000);
 
 
-<!-- ══════════════ ACT I — THE ENCOUNTER ══════════════ -->
-<div class="act-title">⬤ Act I — The Encounter</div>
-<div class="scene-grid">
+// ====== SVG SCENE GENERATOR ======
+function renderPanelScene(p) {
+  const { w, h } = aspectFor(App.project.aspectRatio);
+  const tint = BG_TINT_BY_LIGHTING[p.lighting] || SCENE_BG_BY_MODE[p.creationMode] || '#EDECEA';
+  const chars = (p.characters || []).map(id => App.project.characters.find(c => c.id === id)).filter(Boolean);
+  let silhouettes = '';
+  chars.slice(0, 2).forEach((c, i) => {
+    const cx = chars.length === 1 ? w / 2 : (i === 0 ? w * 0.3 : w * 0.7);
+    const cy = h * 0.55;
+    silhouettes += `
+      <ellipse cx="${cx}" cy="${cy - 18}" rx="9" ry="10" fill="#FFFFFF" stroke="${c.color}" stroke-width="1.2"/>
+      <rect x="${cx - 9}" y="${cy - 6}" width="18" height="32" rx="4" fill="#FFFFFF" stroke="${c.color}" stroke-width="1"/>
+      <line x1="${cx - 9}" y1="${cy + 2}" x2="${cx - 22}" y2="${cy + 20}" stroke="${c.color}" stroke-width="1.4"/>
+      <line x1="${cx + 9}" y1="${cy + 2}" x2="${cx + 22}" y2="${cy + 20}" stroke="${c.color}" stroke-width="1.4"/>
+      <line x1="${cx - 4}" y1="${cy + 26}" x2="${cx - 7}" y2="${cy + 38}" stroke="${c.color}" stroke-width="1.4"/>
+      <line x1="${cx + 4}" y1="${cy + 26}" x2="${cx + 7}" y2="${cy + 38}" stroke="${c.color}" stroke-width="1.4"/>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${w}" height="${h}" fill="${tint}"/>
+    <rect x="0" y="${h - 22}" width="${w}" height="22" fill="rgba(0,0,0,0.05)"/>
+    ${silhouettes}
+  </svg>`;
+}
 
-  <!-- SCENE 01 -->
-  <div class="panel">
-    <span class="panel-number">SCENE 01</span>
-    <span class="panel-duration">00:00 – 00:18 &nbsp;|&nbsp; 18s</span>
-    <div class="scene-canvas">
-      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="fog1" cx="50%" cy="80%" r="70%">
-            <stop offset="0%" stop-color="#1a1a3a" stop-opacity="1"/>
-            <stop offset="100%" stop-color="#000005" stop-opacity="1"/>
-          </radialGradient>
-          <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          <filter id="softglow"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-        </defs>
-        <!-- Sky / bg -->
-        <rect width="400" height="220" fill="url(#fog1)"/>
-        <!-- Rain lines -->
-        <g stroke="#334" stroke-width="0.5" opacity="0.5">
-          <line x1="20" y1="0" x2="10" y2="220"/><line x1="55" y1="0" x2="45" y2="220"/>
-          <line x1="90" y1="0" x2="80" y2="220"/><line x1="130" y1="0" x2="120" y2="220"/>
-          <line x1="170" y1="0" x2="160" y2="220"/><line x1="210" y1="0" x2="200" y2="220"/>
-          <line x1="250" y1="0" x2="240" y2="220"/><line x1="290" y1="0" x2="280" y2="220"/>
-          <line x1="330" y1="0" x2="320" y2="220"/><line x1="370" y1="0" x2="360" y2="220"/>
-        </g>
-        <!-- Ground / puddle reflection -->
-        <ellipse cx="200" cy="200" rx="180" ry="18" fill="#0a0a20" opacity="0.8"/>
-        <line x1="0" y1="190" x2="400" y2="190" stroke="#223" stroke-width="1"/>
-        <!-- Street lamp glow -->
-        <ellipse cx="310" cy="60" rx="50" ry="50" fill="#ff9800" opacity="0.07" filter="url(#softglow)"/>
-        <line x1="310" y1="0" x2="310" y2="190" stroke="#555" stroke-width="2"/>
-        <ellipse cx="310" cy="55" rx="6" ry="3" fill="#ffcc44" filter="url(#glow)"/>
-        <!-- Hero silhouette (left) — standing, coat -->
-        <g fill="#0d0d1a" stroke="#ff3c5a" stroke-width="0.8">
-          <ellipse cx="120" cy="108" rx="12" ry="14"/>
-          <rect x="108" y="122" width="24" height="50" rx="3"/>
-          <line x1="108" y1="130" x2="88" y2="155"/><line x1="132" y1="130" x2="145" y2="158"/>
-          <line x1="115" y1="172" x2="110" y2="195"/><line x1="125" y1="172" x2="130" y2="195"/>
-          <!-- coat flap -->
-          <path d="M108,140 Q90,160 95,190 L108,172Z" fill="#111122" stroke="none" opacity="0.8"/>
-          <path d="M132,140 Q150,160 145,190 L132,172Z" fill="#111122" stroke="none" opacity="0.8"/>
-        </g>
-        <!-- Villain silhouette (right) — arms out, menacing -->
-        <g fill="#0d0d1a" stroke="#c080ff" stroke-width="0.8">
-          <ellipse cx="280" cy="108" rx="13" ry="15"/>
-          <rect x="268" y="123" width="24" height="50" rx="3"/>
-          <!-- arms wide -->
-          <line x1="268" y1="130" x2="240" y2="145"/><line x1="292" y1="130" x2="320" y2="145"/>
-          <line x1="275" y1="173" x2="270" y2="195"/><line x1="285" y1="173" x2="290" y2="195"/>
-        </g>
-        <!-- Ground fog -->
-        <ellipse cx="200" cy="200" rx="200" ry="25" fill="#0a0a18" opacity="0.6"/>
-        <!-- Neon sign reflection on ground -->
-        <rect x="80" y="185" width="240" height="4" fill="#ff3c5a" opacity="0.07" rx="2"/>
-        <!-- Frame lines / aspect ratio guides -->
-        <rect x="0" y="0" width="400" height="220" fill="none" stroke="#ff3c5a" stroke-width="1.5" opacity="0.3"/>
-      </svg>
-      <div class="motion-blur"></div>
-    </div>
-    <div class="panel-info">
-      <div class="scene-label">Wide Establishing Shot — Rainy Alley</div>
-      <div class="tags">
-        <span class="tag tag-cam">EXTREME WIDE</span>
-        <span class="tag tag-move">STATIC → SLOW PUSH IN</span>
-        <span class="tag tag-lens">28mm WIDE</span>
-        <span class="tag tag-fx">RAIN VFX · FOG</span>
-      </div>
-      <div class="scene-desc">Two figures face each other in a rain-soaked back alley. Street lamp creates hard rim lighting. Hero left, villain right. Camera holds static then slowly dollies forward over 10 seconds.</div>
-      <div class="motion-guide">
-        <span class="arrow">▶</span>Camera: STATIC → slow dolly push (5–10% zoom)<br/>
-        <span class="arrow">▶</span>Rain particles: top-to-bottom, slight angle wind-right<br/>
-        <span class="arrow">▶</span>Coat fabric: subtle wind ripple simulation
-      </div>
-      <div class="audio-bar">
-        <span class="audio-icon">♫</span>
-        <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
-        <span>rain ambience · distant thunder · tense low drone</span>
-      </div>
-    </div>
-  </div>
+// ====== PANEL CRUD ======
+function addPanel(actIdx) {
+  const lastPanel = App.project.panels[App.project.panels.length - 1];
+  const targetAct = (actIdx != null) ? actIdx : (lastPanel ? lastPanel.act : 0);
+  const newPanel = {
+    id: uid(),
+    act: targetAct,
+    order: App.project.panels.length,
+    creationMode: App.ui.activeMode,
+    label: 'Untitled Panel',
+    shotType: 'medium', cameraAngle: 'eye', cameraMove: 'static',
+    duration: 5,
+    background: 'studio', lighting: 'bright', emotion: 'neutral',
+    characters: [],
+    visualStyle: 'animated-realism', videoStyle: 'youtube',
+    description: '', voiceover: '', motionNotes: '', audioNotes: '',
+    sketchDataUrl: null, templateId: null, textPrompt: null,
+  };
+  App.project.panels.push(newPanel);
+  App.ui.selectedPanelId = newPanel.id;
+  saveToStorage();
+  render();
+}
 
-  <!-- SCENE 02 -->
-  <div class="panel">
-    <span class="panel-number">SCENE 02</span>
-    <span class="panel-duration">00:18 – 00:30 &nbsp;|&nbsp; 12s</span>
-    <div class="scene-canvas">
-      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="rimGlow" cx="80%" cy="20%" r="60%">
-            <stop offset="0%" stop-color="#ff9800" stop-opacity="0.3"/>
-            <stop offset="100%" stop-color="#000005" stop-opacity="1"/>
-          </radialGradient>
-        </defs>
-        <rect width="400" height="220" fill="#060610"/>
-        <rect width="400" height="220" fill="url(#rimGlow)"/>
-        <!-- Close face — hero, low angle -->
-        <!-- Neck / shoulders -->
-        <rect x="140" y="160" width="120" height="60" rx="10" fill="#111" stroke="#ff3c5a" stroke-width="0.6"/>
-        <!-- Head -->
-        <ellipse cx="200" cy="110" rx="55" ry="62" fill="#1a1a2e" stroke="#ff3c5a" stroke-width="0.8"/>
-        <!-- Ear -->
-        <ellipse cx="145" cy="115" rx="8" ry="12" fill="#1a1a2e" stroke="#ff3c5a" stroke-width="0.6"/>
-        <ellipse cx="255" cy="115" rx="8" ry="12" fill="#1a1a2e" stroke="#ff3c5a" stroke-width="0.6"/>
-        <!-- Eyes — intense -->
-        <ellipse cx="178" cy="105" rx="16" ry="9" fill="#050510"/>
-        <ellipse cx="222" cy="105" rx="16" ry="9" fill="#050510"/>
-        <ellipse cx="178" cy="105" rx="6" ry="6" fill="#ff3c5a" opacity="0.9"/>
-        <ellipse cx="222" cy="105" rx="6" ry="6" fill="#ff3c5a" opacity="0.9"/>
-        <!-- pupils -->
-        <circle cx="178" cy="105" r="3" fill="#000"/>
-        <circle cx="222" cy="105" r="3" fill="#000"/>
-        <!-- eye reflection spark -->
-        <circle cx="181" cy="103" r="1.5" fill="#fff" opacity="0.9"/>
-        <circle cx="225" cy="103" r="1.5" fill="#fff" opacity="0.9"/>
-        <!-- Brow furrowed -->
-        <path d="M162,94 Q178,88 194,93" stroke="#ccc" stroke-width="2" fill="none"/>
-        <path d="M206,93 Q222,88 238,94" stroke="#ccc" stroke-width="2" fill="none"/>
-        <!-- Jaw / mouth tense -->
-        <path d="M180,140 Q200,145 220,140" stroke="#aaa" stroke-width="1.5" fill="none"/>
-        <!-- Nose -->
-        <path d="M197,115 Q193,128 197,132 Q200,134 203,132 Q207,128 203,115" stroke="#888" stroke-width="1" fill="none"/>
-        <!-- Rim light left -->
-        <path d="M145,80 Q135,110 145,160" stroke="#ff9800" stroke-width="3" fill="none" opacity="0.6"/>
-        <!-- Hair (stylised) -->
-        <path d="M150,80 Q160,45 200,42 Q240,45 250,80" fill="#0a0a1a" stroke="#ff3c5a" stroke-width="0.6"/>
-        <!-- Frame -->
-        <rect x="0" y="0" width="400" height="220" fill="none" stroke="#ff9800" stroke-width="1.5" opacity="0.3"/>
-      </svg>
-    </div>
-    <div class="panel-info">
-      <div class="scene-label">ECU Hero Face — Low Angle Lock</div>
-      <div class="tags">
-        <span class="tag tag-cam">EXTREME CLOSE-UP</span>
-        <span class="tag tag-move">STATIC</span>
-        <span class="tag tag-lens">85mm PORTRAIT</span>
-        <span class="tag tag-fx">RIM LIGHT · BOKEH BG</span>
-      </div>
-      <div class="scene-desc">Extreme close-up of the hero's face. Camera positioned just below eye-line (low angle). Rim light from street lamp catches jaw and temple. Eyes lock on threat. Rain drops on skin.</div>
-      <div class="motion-guide">
-        <span class="arrow">▶</span>Camera: LOCKED — no movement, holds tension<br/>
-        <span class="arrow">▶</span>Micro-expression: jaw tightens, pupils dilate<br/>
-        <span class="arrow">▶</span>Rain drops: slide down face surface in real-time
-      </div>
-      <div class="audio-bar">
-        <span class="audio-icon">♫</span>
-        <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
-        <span>heartbeat sub-bass · silence swells</span>
-      </div>
-    </div>
-  </div>
+function duplicatePanel(id) {
+  const p = App.project.panels.find(x => x.id === id);
+  if (!p) return;
+  const copy = Object.assign({}, p, { id: uid(), order: App.project.panels.length, label: p.label + ' (copy)' });
+  App.project.panels.push(copy);
+  saveToStorage();
+  render();
+}
 
-  <!-- SCENE 03 -->
-  <div class="panel">
-    <span class="panel-number">SCENE 03</span>
-    <span class="panel-duration">00:30 – 00:45 &nbsp;|&nbsp; 15s</span>
-    <div class="scene-canvas">
-      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="bg3" cx="50%" cy="100%" r="80%">
-            <stop offset="0%" stop-color="#1a0520"/>
-            <stop offset="100%" stop-color="#020205"/>
-          </radialGradient>
-        </defs>
-        <rect width="400" height="220" fill="url(#bg3)"/>
-        <!-- Ground -->
-        <rect x="0" y="185" width="400" height="35" fill="#080812"/>
-        <!-- Villain — two-shot, villain stepping forward -->
-        <!-- villain body -->
-        <g fill="#0a0010" stroke="#c080ff" stroke-width="0.8">
-          <ellipse cx="270" cy="95" rx="14" ry="16"/>
-          <rect x="256" y="111" width="28" height="55" rx="4"/>
-          <!-- arms — one forward reaching -->
-          <line x1="256" y1="120" x2="228" y2="140"/><line x1="284" y1="118" x2="305" y2="138"/>
-          <line x1="262" y1="166" x2="256" y2="190"/><line x1="270" y1="166" x2="275" y2="190"/>
-          <!-- cloak -->
-          <path d="M256,120 Q235,160 240,190 L256,166Z" fill="#0d0018" stroke="none" opacity="0.9"/>
-          <path d="M284,120 Q305,160 300,190 L284,166Z" fill="#0d0018" stroke="none" opacity="0.9"/>
-        </g>
-        <!-- energy aura on villain hand -->
-        <ellipse cx="225" cy="142" rx="12" ry="12" fill="#c080ff" opacity="0.25"/>
-        <ellipse cx="225" cy="142" rx="6" ry="6" fill="#c080ff" opacity="0.6"/>
-        <ellipse cx="225" cy="142" rx="2" ry="2" fill="#fff" opacity="0.9"/>
-        <!-- Hero — backing up slightly -->
-        <g fill="#0d0d1a" stroke="#ff3c5a" stroke-width="0.8">
-          <ellipse cx="125" cy="98" rx="13" ry="14"/>
-          <rect x="113" y="112" width="24" height="55" rx="3"/>
-          <line x1="113" y1="120" x2="93" y2="148"/><line x1="137" y1="120" x2="152" y2="145"/>
-          <line x1="118" y1="167" x2="112" y2="190"/><line x1="128" y1="167" x2="134" y2="190"/>
-        </g>
-        <!-- depth perspective lines -->
-        <line x1="0" y1="185" x2="400" y2="175" stroke="#222" stroke-width="1"/>
-        <!-- purple energy tendrils from villain -->
-        <path d="M225,142 Q200,120 180,130" stroke="#c080ff" stroke-width="1.5" fill="none" opacity="0.5" stroke-dasharray="4,3"/>
-        <path d="M225,142 Q215,110 200,100" stroke="#c080ff" stroke-width="1" fill="none" opacity="0.3" stroke-dasharray="3,4"/>
-        <rect x="0" y="0" width="400" height="220" fill="none" stroke="#c080ff" stroke-width="1.5" opacity="0.2"/>
-      </svg>
-    </div>
-    <div class="panel-info">
-      <div class="scene-label">Two-Shot — Villain Advances</div>
-      <div class="tags">
-        <span class="tag tag-cam">MEDIUM TWO-SHOT</span>
-        <span class="tag tag-move">SLOW LATERAL TRACK →</span>
-        <span class="tag tag-lens">50mm NORMAL</span>
-        <span class="tag tag-fx">ENERGY VFX · PURPLE AURA</span>
-      </div>
-      <div class="scene-desc">Villain steps forward with glowing hand extended. Hero retreats one step. Camera tracks laterally right at waist height, maintaining both figures in frame. Purple energy crackles from villain's fist.</div>
-      <div class="motion-guide">
-        <span class="arrow">▶</span>Camera: slow lateral dolly right (tracking villain advance)<br/>
-        <span class="arrow">▶</span>VFX: energy orb pulses at 2Hz, tendrils extend toward hero<br/>
-        <span class="arrow">▶</span>Cloth physics: villain cloak billows backward from movement
-      </div>
-      <div class="audio-bar">
-        <span class="audio-icon">♫</span>
-        <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
-        <span>electrical hum · villain voice distortion</span>
-      </div>
-    </div>
-  </div>
+function deletePanel(id) {
+  if (!confirm('Delete this panel?')) return;
+  App.project.panels = App.project.panels.filter(p => p.id !== id);
+  if (App.ui.selectedPanelId === id) App.ui.selectedPanelId = null;
+  saveToStorage();
+  render();
+}
 
-</div><!-- /scene-grid ACT I -->
+function addCharacter() {
+  if (App.project.characters.length >= 6) {
+    alert('Maximum of 6 characters per project.');
+    return;
+  }
+  const name = prompt('Character name:', 'Hero');
+  if (!name) return;
+  const role = prompt('Role (hero / villain / narrator / host / product / extra):', 'hero');
+  if (!role) return;
+  const used = new Set(App.project.characters.map(c => c.color));
+  const color = CHARACTER_COLORS.find(c => !used.has(c)) || '#9A9590';
+  App.project.characters.push({ id: uid(), name, role, color });
+  saveToStorage();
+  render();
+}
 
 
-<!-- ══════════════ ACT II — THE FIGHT ══════════════ -->
-<div class="act-title">⬤ Act II — The Fight</div>
-<div class="scene-grid">
+// ====== SAMPLE LOADER ======
+function loadSample() {
+  if (App.project.panels.length > 0) {
+    if (!confirm('Loading the sample will replace your current project. Continue?')) return;
+  }
+  const heroId = uid();
+  const hostId = uid();
+  App.project = {
+    name: 'Sample Storyboard',
+    aspectRatio: '16:9',
+    acts: ['Act I — The Hook', 'Act II — The Action'],
+    characters: [
+      { id: heroId, name: 'Hero', role: 'hero', color: '#4A8C8C' },
+      { id: hostId, name: 'Host', role: 'host', color: '#7B7BA8' },
+    ],
+    panels: [
+      { id: uid(), act: 0, order: 0, creationMode: 'card',     label: 'Wide Establishing — Alley', shotType: 'wide',     cameraAngle: 'eye', cameraMove: 'static',   duration: 18, background: 'alley',  lighting: 'neon',      emotion: 'tense',   characters: [heroId, hostId], visualStyle: 'animated-realism', videoStyle: 'cinematic', description: 'Two figures face each other in a rain-soaked alley.', voiceover: 'The night was cold. Two figures stood, separated by silence and rain.', motionNotes: 'Slow dolly push', audioNotes: 'Rain · low drone', sketchDataUrl: null, templateId: null, textPrompt: null },
+      { id: uid(), act: 0, order: 1, creationMode: 'template', label: 'ECU Face — Host Close-Up',   shotType: 'close-up', cameraAngle: 'low', cameraMove: 'static',   duration: 7,  background: 'studio', lighting: 'spotlight', emotion: 'excited', characters: [hostId],         visualStyle: 'animated-realism', videoStyle: 'youtube',   description: 'Host extreme close-up, low angle.',                voiceover: "Today, we're talking about something that changed everything.", motionNotes: 'Locked',          audioNotes: 'Heartbeat',     sketchDataUrl: null, templateId: 't-talking-head', textPrompt: null },
+      { id: uid(), act: 1, order: 2, creationMode: 'text',     label: 'Punch Impact',               shotType: 'medium',   cameraAngle: 'eye', cameraMove: 'handheld', duration: 13, background: 'street', lighting: 'dark',      emotion: 'angry',   characters: [heroId, hostId], visualStyle: 'animated-realism', videoStyle: 'cinematic', description: 'Hero right cross connects.',                       voiceover: 'And then it happened in a single moment.',                       motionNotes: 'Camera shake',    audioNotes: 'Bone crack',    sketchDataUrl: null, templateId: null, textPrompt: 'punch impact slow motion' },
+      { id: uid(), act: 1, order: 3, creationMode: 'sketch',   label: 'Outro — CTA Sketch',         shotType: 'medium',   cameraAngle: 'eye', cameraMove: 'zoom',     duration: 9,  background: 'studio', lighting: 'bright',    emotion: 'happy',   characters: [hostId],         visualStyle: 'sketch',           videoStyle: 'youtube',   description: 'Hand-sketched CTA frame.',                         voiceover: 'If this helped you, smash that subscribe button.',               motionNotes: 'Zoom in slight',  audioNotes: 'Upbeat sting',  sketchDataUrl: null, templateId: null, textPrompt: null },
+    ],
+  };
+  App.ui.selectedPanelId = null;
+  saveToStorage();
+  render();
+  flashStatus('Sample loaded');
+}
 
-  <!-- SCENE 04 -->
-  <div class="panel">
-    <span class="panel-number">SCENE 04</span>
-    <span class="panel-duration">00:45 – 01:05 &nbsp;|&nbsp; 20s</span>
-    <div class="scene-canvas">
-      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="impact4" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#ff9800" stop-opacity="0.8"/>
-            <stop offset="60%" stop-color="#ff3c5a" stop-opacity="0.3"/>
-            <stop offset="100%" stop-color="#000" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-        <rect width="400" height="220" fill="#070710"/>
-        <!-- Impact flash bg -->
-        <ellipse cx="200" cy="110" rx="120" ry="80" fill="url(#impact4)"/>
-        <!-- Hero — punch forward, dynamic lean -->
-        <!-- body -->
-        <g fill="#0d0d1a" stroke="#ff3c5a" stroke-width="1">
-          <ellipse cx="140" cy="95" rx="12" ry="13"/>
-          <!-- torso leaning forward -->
-          <rect x="130" y="108" width="22" height="45" rx="3" transform="rotate(-10,141,130)"/>
-          <!-- punch arm extended RIGHT -->
-          <line x1="152" y1="115" x2="215" y2="108" stroke="#ff3c5a" stroke-width="3"/>
-          <circle cx="218" cy="108" r="8" fill="#ff3c5a" opacity="0.9"/>
-          <!-- back arm -->
-          <line x1="130" y1="115" x2="110" y2="138"/>
-          <!-- legs — stance -->
-          <line x1="136" y1="153" x2="124" y2="185" stroke-width="2.5"/>
-          <line x1="146" y1="153" x2="158" y2="185" stroke-width="2.5"/>
-        </g>
-        <!-- Villain — being hit, recoil -->
-        <g fill="#0a0010" stroke="#c080ff" stroke-width="0.8">
-          <ellipse cx="260" cy="100" rx="13" ry="14" transform="rotate(15,260,100)"/>
-          <!-- body recoiling -->
-          <rect x="249" y="114" width="22" height="45" rx="3" transform="rotate(15,260,136)"/>
-          <!-- arms flailing -->
-          <line x1="249" y1="118" x2="228" y2="100" transform="rotate(15,260,118)"/>
-          <line x1="271" y1="118" x2="295" y2="105" transform="rotate(15,260,118)"/>
-          <line x1="254" y1="159" x2="240" y2="185" transform="rotate(15,260,159)"/>
-          <line x1="264" y1="159" x2="278" y2="185" transform="rotate(15,260,159)"/>
-        </g>
-        <!-- Impact star burst -->
-        <g stroke="#ff9800" stroke-width="2" fill="none" opacity="0.9">
-          <line x1="225" y1="108" x2="248" y2="98"/>
-          <line x1="225" y1="108" x2="250" y2="115"/>
-          <line x1="225" y1="108" x2="240" y2="125"/>
-          <line x1="225" y1="108" x2="218" y2="128"/>
-          <line x1="225" y1="108" x2="205" y2="122"/>
-        </g>
-        <!-- motion trail on fist -->
-        <path d="M160,112 Q185,110 215,108" stroke="#ff3c5a" stroke-width="6" fill="none" opacity="0.2"/>
-        <path d="M170,112 Q192,110 215,108" stroke="#ff9800" stroke-width="3" fill="none" opacity="0.3"/>
-        <!-- speed lines -->
-        <g stroke="#ff3c5a" stroke-width="0.5" opacity="0.3">
-          <line x1="50" y1="80" x2="200" y2="100"/><line x1="50" y1="110" x2="195" y2="108"/>
-          <line x1="50" y1="140" x2="200" y2="120"/>
-        </g>
-        <rect x="0" y="0" width="400" height="220" fill="none" stroke="#ff9800" stroke-width="2" opacity="0.4"/>
-      </svg>
-      <div class="motion-blur"></div>
-    </div>
-    <div class="panel-info">
-      <div class="scene-label">ACTION — First Punch Impact</div>
-      <div class="tags">
-        <span class="tag tag-cam">MEDIUM SHOT</span>
-        <span class="tag tag-move">HANDHELD SHAKE</span>
-        <span class="tag tag-lens">35mm</span>
-        <span class="tag tag-fx">IMPACT FLASH · SPEED LINES</span>
-      </div>
-      <div class="scene-desc">Hero launches first strike — a right cross that connects with villain's jaw. Frame freezes for 2 frames on impact. Speed lines radiate from fist. Camera shakes on contact. Villain's head snaps left.</div>
-      <div class="motion-guide">
-        <span class="arrow">▶</span>Camera: handheld micro-shake on impact frame (2-frame hold)<br/>
-        <span class="arrow">▶</span>Hero punch: motion blur trail (3-frame smear) leading into fist<br/>
-        <span class="arrow">▶</span>Villain head: snap rotation 45° right over 0.1s then settle
-      </div>
-      <div class="audio-bar">
-        <span class="audio-icon">♫</span>
-        <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
-        <span>bone crack · whoosh · impact thud · music spike</span>
-      </div>
-    </div>
-  </div>
+// ====== EXPORT ======
+function exportProject(kind) {
+  if (App.project.panels.length === 0) {
+    alert('Add at least one panel before exporting.');
+    return;
+  }
+  if (kind === 'json') return exportJson();
+  if (kind === 'html') return exportHtml();
+  if (kind === 'pdf')  return exportPdf();
+}
 
-  <!-- SCENE 05 -->
-  <div class="panel">
-    <span class="panel-number">SCENE 05</span>
-    <span class="panel-duration">01:05 – 01:20 &nbsp;|&nbsp; 15s</span>
-    <div class="scene-canvas">
-      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
-        <rect width="400" height="220" fill="#040410"/>
-        <!-- Bird's eye / overhead view -->
-        <!-- Ground circle indicating overhead -->
-        <ellipse cx="200" cy="130" rx="160" ry="80" fill="#0a0a1e" stroke="#333" stroke-width="1"/>
-        <!-- Hero (top-down) — kick -->
-        <g fill="#111122" stroke="#ff3c5a" stroke-width="1">
-          <!-- torso circle -->
-          <ellipse cx="160" cy="120" rx="14" ry="18"/>
-          <!-- head -->
-          <ellipse cx="155" cy="102" rx="8" ry="9"/>
-          <!-- extended kick leg -->
-          <line x1="168" y1="135" x2="210" y2="145" stroke-width="3"/>
-          <ellipse cx="213" cy="147" rx="6" ry="5" fill="#ff3c5a"/>
-          <!-- other leg -->
-          <line x1="160" y1="138" x2="155" y2="160"/>
-          <!-- arms overhead view -->
-          <line x1="147" y1="115" x2="130" y2="108"/><line x1="173" y1="115" x2="185" y2="105"/>
-        </g>
-        <!-- Villain top-down reacting -->
-        <g fill="#0a0010" stroke="#c080ff" stroke-width="1">
-          <ellipse cx="248" cy="140" rx="14" ry="18" transform="rotate(20,248,140)"/>
-          <ellipse cx="260" cy="125" rx="8" ry="9" transform="rotate(20,260,125)"/>
-          <line x1="240" y1="148" x2="218" y2="158" stroke-width="2"/>
-          <line x1="256" y1="153" x2="258" y2="175" stroke-width="2"/>
-          <line x1="238" y1="134" x2="220" y2="122"/><line x1="260" y1="130" x2="275" y2="118"/>
-        </g>
-        <!-- kick arc -->
-        <path d="M168,135 Q192,135 210,145" stroke="#ff9800" stroke-width="2" fill="none" stroke-dasharray="5,3" opacity="0.7"/>
-        <!-- Overhead direction arrow -->
-        <text x="340" y="30" fill="#666" font-size="9" font-family="monospace">TOP DOWN</text>
-        <text x="340" y="42" fill="#666" font-size="9" font-family="monospace">90° CRANE</text>
-        <!-- compass -->
-        <circle cx="360" cy="65" r="15" fill="none" stroke="#333"/>
-        <line x1="360" y1="52" x2="360" y2="58" stroke="#ff3c5a" stroke-width="2"/>
-        <text x="357" y="85" fill="#666" font-size="8">S</text>
-        <!-- speed arc for kick -->
-        <path d="M172,133 Q195,128 215,145" stroke="#ff3c5a" stroke-width="1" fill="none" opacity="0.4"/>
-        <rect x="0" y="0" width="400" height="220" fill="none" stroke="#64c8ff" stroke-width="1.5" opacity="0.3"/>
-      </svg>
-    </div>
-    <div class="panel-info">
-      <div class="scene-label">Overhead Crane — Spinning Kick</div>
-      <div class="tags">
-        <span class="tag tag-cam">BIRD'S-EYE / OVERHEAD</span>
-        <span class="tag tag-move">SLOW ROTATE (CRANE)</span>
-        <span class="tag tag-lens">24mm WIDE (DRONE)</span>
-        <span class="tag tag-fx">MOTION ARC · SLOW-MO 60fps</span>
-      </div>
-      <div class="scene-desc">Crane / drone shot looking straight down. Hero performs spinning back kick. Camera rotates 30° clockwise in sync with hero's spin — matching the rotation energy. Slowed to 60fps for clarity.</div>
-      <div class="motion-guide">
-        <span class="arrow">▶</span>Camera: overhead, slow clockwise rotation (0.5 rot/sec)<br/>
-        <span class="arrow">▶</span>Hero spin: 360° body rotation, kick lands at 270° mark<br/>
-        <span class="arrow">▶</span>Slow-mo: 60fps playback → 40% speed gives float effect
-      </div>
-      <div class="audio-bar">
-        <span class="audio-icon">♫</span>
-        <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
-        <span>slow-pitch whoosh · reverb kick · time stretch sfx</span>
-      </div>
-    </div>
-  </div>
+function downloadBlob(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
-  <!-- SCENE 06 -->
-  <div class="panel">
-    <span class="panel-number">SCENE 06</span>
-    <span class="panel-duration">01:20 – 01:35 &nbsp;|&nbsp; 15s</span>
-    <div class="scene-canvas">
-      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#0f0f1e"/>
-            <stop offset="100%" stop-color="#050510"/>
-          </linearGradient>
-        </defs>
-        <rect width="400" height="220" fill="#040408"/>
-        <!-- Wall (villain thrown into) -->
-        <rect x="300" y="0" width="100" height="220" fill="url(#wallGrad)" stroke="#222" stroke-width="1"/>
-        <!-- brick pattern -->
-        <g stroke="#1a1a2e" stroke-width="0.5" fill="none">
-          <rect x="305" y="10" width="40" height="18"/><rect x="350" y="10" width="45" height="18"/>
-          <rect x="310" y="32" width="40" height="18"/><rect x="355" y="32" width="40" height="18"/>
-          <rect x="305" y="54" width="40" height="18"/><rect x="350" y="54" width="45" height="18"/>
-          <rect x="305" y="76" width="40" height="18"/><rect x="350" y="76" width="45" height="18"/>
-          <rect x="310" y="98" width="40" height="18"/><rect x="355" y="98" width="40" height="18"/>
-          <rect x="305" y="120" width="40" height="18"/><rect x="350" y="120" width="45" height="18"/>
-          <rect x="305" y="142" width="40" height="18"/><rect x="350" y="142" width="45" height="18"/>
-        </g>
-        <!-- Villain smashed into wall — crumpled -->
-        <g fill="#0a0010" stroke="#c080ff" stroke-width="0.8" opacity="0.9">
-          <ellipse cx="310" cy="115" rx="13" ry="14" transform="rotate(-20,310,115)"/>
-          <rect x="298" y="126" width="22" height="40" rx="4" transform="rotate(-20,309,146)"/>
-          <line x1="298" y1="130" x2="278" y2="150" transform="rotate(-20,298,130)"/>
-          <line x1="320" y1="130" x2="330" y2="155"/>
-          <line x1="305" y1="166" x2="295" y2="190"/>
-          <line x1="315" y1="166" x2="320" y2="190"/>
-        </g>
-        <!-- Wall crack impact -->
-        <g stroke="#fff" stroke-width="1" fill="none" opacity="0.4">
-          <line x1="310" y1="115" x2="330" y2="90"/>
-          <line x1="310" y1="115" x2="340" y2="110"/>
-          <line x1="310" y1="115" x2="335" y2="135"/>
-          <line x1="310" y1="115" x2="320" y2="150"/>
-          <line x1="310" y1="115" x2="298" y2="95"/>
-        </g>
-        <!-- Dust / debris particles -->
-        <circle cx="330" cy="95" r="3" fill="#aaa" opacity="0.4"/>
-        <circle cx="345" cy="108" r="2" fill="#aaa" opacity="0.3"/>
-        <circle cx="298" cy="90" r="4" fill="#aaa" opacity="0.25"/>
-        <circle cx="320" cy="155" r="2" fill="#aaa" opacity="0.3"/>
-        <!-- Hero — follow through pose -->
-        <g fill="#0d0d1a" stroke="#ff3c5a" stroke-width="0.8">
-          <ellipse cx="195" cy="100" rx="12" ry="13"/>
-          <rect x="185" y="113" width="20" height="48" rx="3"/>
-          <!-- arm extended toward wall -->
-          <line x1="205" y1="120" x2="270" y2="118" stroke-width="2.5"/>
-          <line x1="185" y1="118" x2="165" y2="135"/>
-          <line x1="190" y1="161" x2="183" y2="190"/>
-          <line x1="200" y1="161" x2="207" y2="190"/>
-        </g>
-        <!-- floor ground -->
-        <line x1="0" y1="195" x2="400" y2="195" stroke="#222" stroke-width="1.5"/>
-        <rect x="0" y="0" width="400" height="220" fill="none" stroke="#ff3c5a" stroke-width="1.5" opacity="0.25"/>
-      </svg>
-      <div class="motion-blur"></div>
-    </div>
-    <div class="panel-info">
-      <div class="scene-label">Hero Throws Villain into Wall</div>
-      <div class="tags">
-        <span class="tag tag-cam">MEDIUM WIDE</span>
-        <span class="tag tag-move">WHIP PAN → SNAP ZOOM</span>
-        <span class="tag tag-lens">50mm</span>
-        <span class="tag tag-fx">DEBRIS · WALL CRACK · DUST</span>
-      </div>
-      <div class="scene-desc">Hero grabs villain and hurls them into a concrete wall. Camera whip-pans right to follow the throw, then snap-zooms in on villain impact. Wall cracks radiate from impact point. Dust cloud bursts outward.</div>
-      <div class="motion-guide">
-        <span class="arrow">▶</span>Camera: whip pan right (0.15s) → snap zoom to wall (0.1s)<br/>
-        <span class="arrow">▶</span>Wall debris: physics sim — 8–12 brick chunks fly outward<br/>
-        <span class="arrow">▶</span>Dust: volumetric burst from impact point, settles over 1.5s
-      </div>
-      <div class="audio-bar">
-        <span class="audio-icon">♫</span>
-        <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
-        <span>concrete smash · rubble scatter · echo decay</span>
-      </div>
-    </div>
-  </div>
+function safeName() {
+  return (App.project.name || 'storyboard').replace(/[^a-z0-9]/gi, '-').toLowerCase();
+}
 
-  <!-- SCENE 07 -->
-  <div class="panel">
-    <span class="panel-number">SCENE 07</span>
-    <span class="panel-duration">01:35 – 01:50 &nbsp;|&nbsp; 15s</span>
-    <div class="scene-canvas">
-      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="counterBg" cx="60%" cy="50%" r="60%">
-            <stop offset="0%" stop-color="#200010"/>
-            <stop offset="100%" stop-color="#040408"/>
-          </radialGradient>
-        </defs>
-        <rect width="400" height="220" fill="url(#counterBg)"/>
-        <!-- Villain counter-strike — energy blast -->
-        <!-- Hero stumbling back -->
-        <g fill="#0d0d1a" stroke="#ff3c5a" stroke-width="0.8" opacity="0.85">
-          <ellipse cx="95" cy="100" rx="12" ry="13" transform="rotate(15,95,100)"/>
-          <rect x="84" y="113" width="20" height="45" rx="3" transform="rotate(15,94,135)"/>
-          <line x1="84" y1="120" x2="63" y2="108"/>
-          <line x1="104" y1="116" x2="118" y2="130"/>
-          <line x1="88" y1="158" x2="78" y2="185"/>
-          <line x1="98" y1="158" x2="108" y2="185"/>
-        </g>
-        <!-- Villain rising — energy charging -->
-        <g fill="#0a0010" stroke="#c080ff" stroke-width="1">
-          <ellipse cx="295" cy="100" rx="14" ry="16"/>
-          <rect x="282" y="116" width="26" height="50" rx="4"/>
-          <!-- both arms forward blasting -->
-          <line x1="282" y1="122" x2="240" y2="115" stroke-width="2.5" stroke="#c080ff"/>
-          <line x1="308" y1="122" x2="250" y2="125" stroke-width="2.5" stroke="#c080ff"/>
-          <line x1="288" y1="166" x2="280" y2="190"/>
-          <line x1="300" y1="166" x2="306" y2="190"/>
-        </g>
-        <!-- Energy blast beam -->
-        <defs>
-          <linearGradient id="blastGrad" x1="1" y1="0" x2="0" y2="0">
-            <stop offset="0%" stop-color="#c080ff" stop-opacity="1"/>
-            <stop offset="100%" stop-color="#ff3c5a" stop-opacity="0.6"/>
-          </linearGradient>
-        </defs>
-        <path d="M248,118 Q200,118 140,105" stroke="url(#blastGrad)" stroke-width="8" fill="none" opacity="0.7"/>
-        <path d="M248,118 Q200,120 140,110" stroke="#fff" stroke-width="2" fill="none" opacity="0.4"/>
-        <!-- blast hits hero -->
-        <ellipse cx="110" cy="107" rx="25" ry="18" fill="#c080ff" opacity="0.2"/>
-        <!-- shockwave rings -->
-        <circle cx="110" cy="107" r="15" fill="none" stroke="#c080ff" stroke-width="1.5" opacity="0.6"/>
-        <circle cx="110" cy="107" r="28" fill="none" stroke="#c080ff" stroke-width="0.8" opacity="0.3"/>
-        <!-- camera tilt indicator -->
-        <text x="8" y="215" fill="#555" font-size="8" font-family="monospace">DUTCH TILT — 15° CW</text>
-        <rect x="0" y="0" width="400" height="220" fill="none" stroke="#c080ff" stroke-width="1.5" opacity="0.2" transform="rotate(3,200,110)"/>
-        <rect x="0" y="0" width="400" height="220" fill="none" stroke="#c080ff" stroke-width="1.5" opacity="0.15"/>
-      </svg>
-    </div>
-    <div class="panel-info">
-      <div class="scene-label">Villain Counter — Energy Blast</div>
-      <div class="tags">
-        <span class="tag tag-cam">MEDIUM WIDE</span>
-        <span class="tag tag-move">DUTCH TILT 15°</span>
-        <span class="tag tag-lens">35mm</span>
-        <span class="tag tag-fx">ENERGY BEAM · SHOCKWAVE</span>
-      </div>
-      <div class="scene-desc">Villain recovers and fires a twin-handed energy blast. Camera holds a Dutch tilt (15°) to convey disorientation. Hero is hit — stumbles backward. Shockwave ripples expand from contact point.</div>
-      <div class="motion-guide">
-        <span class="arrow">▶</span>Camera: 15° Dutch tilt, locked — heightens dread<br/>
-        <span class="arrow">▶</span>Beam VFX: linear travel L→R, 0.05s delay after hands charge<br/>
-        <span class="arrow">▶</span>Hero: pushed back 2m, coat shreds at blast edge
-      </div>
-      <div class="audio-bar">
-        <span class="audio-icon">♫</span>
-        <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
-        <span>energy charge whine → blast boom → silence spike</span>
-      </div>
-    </div>
-  </div>
+function exportJson() {
+  downloadBlob(JSON.stringify(App.project, null, 2), safeName() + '.json', 'application/json');
+  flashStatus('JSON exported');
+}
 
-</div><!-- /scene-grid ACT II -->
+function exportHtml() {
+  const styles = document.querySelector('style').innerHTML;
+  const panelHtml = App.project.acts.map((name, idx) => {
+    const cards = App.project.panels.filter(p => p.act === idx).map(renderPanelCard).join('');
+    if (!cards) return '';
+    return '<div class="act-heading">' + escapeHtml(name) + '</div><div class="grid">' + cards + '</div>';
+  }).join('');
+  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + escapeHtml(App.project.name) +
+    ' — Storyboard</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"><style>' + styles +
+    '</style></head><body style="background:var(--bg);padding:30px"><h1 style="font-family:\'DM Sans\',sans-serif;color:var(--text);margin-bottom:24px;font-weight:500">' +
+    escapeHtml(App.project.name) + '</h1>' + panelHtml + '</body></html>';
+  downloadBlob(html, safeName() + '.html', 'text/html');
+  flashStatus('HTML exported');
+}
+
+function exportPdf() {
+  const original = document.title;
+  document.title = App.project.name + ' — Storyboard';
+  window.print();
+  setTimeout(() => { document.title = original; }, 500);
+}
 
 
-<!-- ══════════════ ACT III — THE FINISH ══════════════ -->
-<div class="act-title">⬤ Act III — The Finish</div>
-<div class="scene-grid">
+// ====== RENDER ======
+function render() {
+  document.getElementById('project-name').textContent = App.project.name;
+  renderSidebar();
+  renderTimeline();
+  renderViewToggle();
+  renderMain();
+  renderEditor();
+  renderStatusBar();
+}
 
-  <!-- SCENE 08 -->
-  <div class="panel">
-    <span class="panel-number">SCENE 08</span>
-    <span class="panel-duration">01:50 – 02:05 &nbsp;|&nbsp; 15s</span>
-    <div class="scene-canvas">
-      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="riseBg" cx="50%" cy="60%" r="70%">
-            <stop offset="0%" stop-color="#101025"/>
-            <stop offset="100%" stop-color="#020208"/>
-          </radialGradient>
-        </defs>
-        <rect width="400" height="220" fill="url(#riseBg)"/>
-        <!-- Hero rising from ground — ground level camera -->
-        <!-- Ground -->
-        <rect x="0" y="180" width="400" height="40" fill="#060612"/>
-        <line x1="0" y1="180" x2="400" y2="180" stroke="#333" stroke-width="1.5"/>
-        <!-- Camera at ground level — hero massive in foreground -->
-        <!-- Hero silhouette rising — low angle, filling frame -->
-        <g fill="#0d0d1a" stroke="#ff3c5a" stroke-width="1">
-          <!-- huge legs near camera -->
-          <rect x="155" y="140" width="28" height="75" rx="4"/>
-          <rect x="195" y="148" width="28" height="72" rx="4"/>
-          <!-- torso -->
-          <rect x="148" y="75" width="82" height="80" rx="8"/>
-          <!-- head -->
-          <ellipse cx="200" cy="60" rx="32" ry="36"/>
-          <!-- arms wide — power pose -->
-          <line x1="148" y1="95" x2="80" y2="120" stroke-width="4"/>
-          <line x1="230" y1="95" x2="298" y2="120" stroke-width="4"/>
-        </g>
-        <!-- red energy glow aura around hero -->
-        <ellipse cx="200" cy="120" rx="100" ry="80" fill="#ff3c5a" opacity="0.06"/>
-        <ellipse cx="200" cy="120" rx="60" ry="50" fill="#ff3c5a" opacity="0.05"/>
-        <!-- ground glow under feet -->
-        <ellipse cx="185" cy="182" rx="20" ry="5" fill="#ff3c5a" opacity="0.3"/>
-        <ellipse cx="215" cy="182" rx="20" ry="5" fill="#ff3c5a" opacity="0.3"/>
-        <!-- rain / debris -->
-        <g stroke="#445" stroke-width="0.5" opacity="0.5">
-          <line x1="50" y1="0" x2="40" y2="80"/><line x1="100" y1="0" x2="90" y2="80"/>
-          <line x1="150" y1="0" x2="140" y2="80"/><line x1="280" y1="0" x2="270" y2="80"/>
-          <line x1="330" y1="0" x2="320" y2="80"/><line x1="380" y1="0" x2="370" y2="80"/>
-        </g>
-        <!-- camera angle indicator -->
-        <text x="8" y="15" fill="#555" font-size="8" font-family="monospace">LOW ANGLE / GROUND LEVEL</text>
-        <rect x="0" y="0" width="400" height="220" fill="none" stroke="#ff3c5a" stroke-width="2" opacity="0.3"/>
-      </svg>
-    </div>
-    <div class="panel-info">
-      <div class="scene-label">Hero Rises — Low Angle Power Shot</div>
-      <div class="tags">
-        <span class="tag tag-cam">EXTREME LOW ANGLE</span>
-        <span class="tag tag-move">STATIC → SLOW TILT UP</span>
-        <span class="tag tag-lens">18mm ULTRA WIDE</span>
-        <span class="tag tag-fx">AURA GLOW · GROUND DUST</span>
-      </div>
-      <div class="scene-desc">Camera placed at ground level. Hero rises from fallen position — filling the frame from feet to sky. Slow tilt up from boots to face over 4 seconds. Red energy aura radiates outward. Empowering beat drop.</div>
-      <div class="motion-guide">
-        <span class="arrow">▶</span>Camera: ground-level static → slow tilt up (4s, 0–90°)<br/>
-        <span class="arrow">▶</span>Hero: slow rise from kneel to full stand (3s)<br/>
-        <span class="arrow">▶</span>Aura: pulse outward at 1Hz, intensity increases as hero stands
-      </div>
-      <div class="audio-bar">
-        <span class="audio-icon">♫</span>
-        <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
-        <span>music beat drop · deep bass rise · crowd cheer sub</span>
-      </div>
-    </div>
-  </div>
+function renderSidebar() {
+  const modes = [
+    { id: 'card',     icon: '📋', label: 'Card' },
+    { id: 'template', icon: '🎬', label: 'Templates' },
+    { id: 'text',     icon: '✨', label: 'Text to Panel' },
+    { id: 'sketch',   icon: '✏️', label: 'Sketch' },
+  ];
+  const modesHtml = modes.map(m =>
+    '<div class="mode-tab ' + (App.ui.activeMode === m.id ? 'active' : '') + '" data-mode="' + m.id + '">' +
+    '<span class="mode-icon">' + m.icon + '</span> ' + m.label + '</div>'
+  ).join('');
 
-  <!-- SCENE 09 -->
-  <div class="panel">
-    <span class="panel-number">SCENE 09</span>
-    <span class="panel-duration">02:05 – 02:18 &nbsp;|&nbsp; 13s</span>
-    <div class="scene-canvas">
-      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
-        <rect width="400" height="220" fill="#020208"/>
-        <!-- 360 orbit shot — orbit track overlay -->
-        <ellipse cx="200" cy="140" rx="130" ry="35" fill="none" stroke="#ff980040" stroke-width="1" stroke-dasharray="6,4"/>
-        <!-- camera positions on orbit -->
-        <circle cx="330" cy="140" r="5" fill="#ff9800" opacity="0.7"/>
-        <circle cx="200" cy="105" r="5" fill="#ff9800" opacity="0.5"/>
-        <circle cx="70" cy="140" r="5" fill="#ff9800" opacity="0.5"/>
-        <text x="336" y="138" fill="#ff9800" font-size="7" font-family="monospace">CAM</text>
-        <!-- final clash — hero and villain fists meeting -->
-        <!-- hero left -->
-        <g fill="#111" stroke="#ff3c5a" stroke-width="1">
-          <ellipse cx="130" cy="100" rx="12" ry="13"/>
-          <rect x="120" y="113" width="22" height="48" rx="3"/>
-          <line x1="142" y1="120" x2="192" y2="115" stroke-width="3"/>
-          <circle cx="195" cy="114" r="9" fill="#ff3c5a" opacity="0.9"/>
-          <line x1="120" y1="118" x2="100" y2="138"/>
-          <line x1="126" y1="161" x2="118" y2="190"/>
-          <line x1="136" y1="161" x2="144" y2="190"/>
-        </g>
-        <!-- villain right -->
-        <g fill="#0a0010" stroke="#c080ff" stroke-width="1">
-          <ellipse cx="270" cy="100" rx="12" ry="13"/>
-          <rect x="260" y="113" width="22" height="48" rx="3"/>
-          <line x1="260" y1="120" x2="210" y2="115" stroke-width="3"/>
-          <circle cx="207" cy="114" r="9" fill="#c080ff" opacity="0.9"/>
-          <line x1="282" y1="118" x2="302" y2="138"/>
-          <line x1="264" y1="161" x2="256" y2="190"/>
-          <line x1="274" y1="161" x2="282" y2="190"/>
-        </g>
-        <!-- Clash explosion centre -->
-        <circle cx="200" cy="114" r="20" fill="#fff" opacity="0.08"/>
-        <circle cx="200" cy="114" r="12" fill="#ff9800" opacity="0.2"/>
-        <g stroke="#ff9800" stroke-width="2" fill="none">
-          <line x1="200" y1="114" x2="200" y2="88"/><line x1="200" y1="114" x2="224" y2="100"/>
-          <line x1="200" y1="114" x2="222" y2="130"/><line x1="200" y1="114" x2="200" y2="140"/>
-          <line x1="200" y1="114" x2="178" y2="130"/><line x1="200" y1="114" x2="176" y2="100"/>
-        </g>
-        <!-- orbit arrow -->
-        <path d="M330,140 Q310,108 270,105" stroke="#ff9800" stroke-width="1.5" fill="none" marker-end="url(#arr)" opacity="0.5"/>
-        <text x="8" y="15" fill="#555" font-size="8" font-family="monospace">360° ORBIT — 4 SEC</text>
-        <rect x="0" y="0" width="400" height="220" fill="none" stroke="#ff9800" stroke-width="1.5" opacity="0.3"/>
-      </svg>
-      <div class="motion-blur"></div>
-    </div>
-    <div class="panel-info">
-      <div class="scene-label">360° Orbit — Final Clash</div>
-      <div class="tags">
-        <span class="tag tag-cam">360° ORBIT SHOT</span>
-        <span class="tag tag-move">FULL ORBIT 4 SEC</span>
-        <span class="tag tag-lens">35mm</span>
-        <span class="tag tag-fx">CLASH EXPLOSION · FREEZE FRAME</span>
-      </div>
-      <div class="scene-desc">Camera orbits 360° around both fighters as their fists meet in a final clash. The orbit takes exactly 4 seconds. At the moment of impact (180° mark), time freezes for 1 full second — then explodes back to real speed.</div>
-      <div class="motion-guide">
-        <span class="arrow">▶</span>Camera: 360° full orbit at constant speed, pivot = midpoint<br/>
-        <span class="arrow">▶</span>Time: freeze on impact (1s hold) → fast-forward burst back to RT<br/>
-        <span class="arrow">▶</span>Explosion: radial shockwave, debris orbit with camera path
-      </div>
-      <div class="audio-bar">
-        <span class="audio-icon">♫</span>
-        <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
-        <span>time stop whoom → silence → massive explosion crack</span>
-      </div>
-    </div>
-  </div>
+  const charsHtml = App.project.characters.length === 0
+    ? '<div style="color:var(--muted);font-size:0.7rem;margin-bottom:8px">No characters yet</div>'
+    : App.project.characters.map(c =>
+        '<span class="char-chip"><span class="char-dot" style="background:' + c.color + '"></span>' + escapeHtml(c.name) + '</span>'
+      ).join('');
 
-  <!-- SCENE 10 — FINAL -->
-  <div class="panel">
-    <span class="panel-number">SCENE 10 — FINALE</span>
-    <span class="panel-duration">02:18 – 02:30 &nbsp;|&nbsp; 12s</span>
-    <div class="scene-canvas">
-      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="finalBg" cx="30%" cy="50%" r="70%">
-            <stop offset="0%" stop-color="#1a0a0a"/>
-            <stop offset="100%" stop-color="#020208"/>
-          </radialGradient>
-        </defs>
-        <rect width="400" height="220" fill="url(#finalBg)"/>
-        <!-- Ground -->
-        <line x1="0" y1="185" x2="400" y2="185" stroke="#1a1a2e" stroke-width="1"/>
-        <!-- Villain defeated on ground -->
-        <g fill="#0a0010" stroke="#c080ff" stroke-width="0.6" opacity="0.6">
-          <!-- lying flat -->
-          <ellipse cx="290" cy="178" rx="15" ry="10"/>
-          <rect x="205" y="172" width="85" height="16" rx="5"/>
-          <!-- arm splayed -->
-          <line x1="205" y1="178" x2="170" y2="172"/>
-          <line x1="205" y1="180" x2="175" y2="190"/>
-          <!-- faint energy flicker -->
-          <ellipse cx="230" cy="175" rx="20" ry="4" fill="#c080ff" opacity="0.08"/>
-        </g>
-        <!-- Hero standing victorious — silhouette against glow -->
-        <!-- glow backdrop -->
-        <ellipse cx="115" cy="120" rx="70" ry="90" fill="#ff3c5a" opacity="0.06"/>
-        <g fill="#050510" stroke="#ff3c5a" stroke-width="0.8">
-          <ellipse cx="115" cy="68" rx="14" ry="16"/>
-          <!-- torso upright -->
-          <rect x="103" y="84" width="24" height="55" rx="4"/>
-          <!-- arms — relaxed, one raised to sky -->
-          <line x1="103" y1="92" x2="78" y2="110"/>
-          <!-- right arm raised upward -->
-          <line x1="127" y1="90" x2="145" y2="55"/>
-          <!-- legs planted wide -->
-          <line x1="108" y1="139" x2="96" y2="185" stroke-width="2.5"/>
-          <line x1="120" y1="139" x2="134" y2="185" stroke-width="2.5"/>
-          <!-- coat flutter -->
-          <path d="M103,100 Q80,145 85,185 L103,139Z" fill="#0a0a1a" stroke="none"/>
-          <path d="M127,100 Q150,145 145,185 L127,139Z" fill="#0a0a1a" stroke="none"/>
-        </g>
-        <!-- Glow under hero feet -->
-        <ellipse cx="115" cy="186" rx="30" ry="6" fill="#ff3c5a" opacity="0.25"/>
-        <!-- Dramatic rays from hero -->
-        <g stroke="#ff3c5a" stroke-width="0.5" opacity="0.1">
-          <line x1="115" y1="68" x2="20" y2="0"/><line x1="115" y1="68" x2="60" y2="0"/>
-          <line x1="115" y1="68" x2="115" y2="0"/><line x1="115" y1="68" x2="170" y2="0"/>
-          <line x1="115" y1="68" x2="220" y2="0"/>
-        </g>
-        <!-- moonlight shaft -->
-        <path d="M80,0 L30,220 L140,220 L180,0Z" fill="#fff" opacity="0.02"/>
-        <!-- "THE END" style fade bar -->
-        <rect x="0" y="195" width="400" height="25" fill="#000" opacity="0.5"/>
-        <text x="200" y="212" fill="#ff3c5a" font-size="10" font-family="monospace" text-anchor="middle" letter-spacing="6">FADE TO BLACK</text>
-        <rect x="0" y="0" width="400" height="220" fill="none" stroke="#ff3c5a" stroke-width="2" opacity="0.4"/>
-      </svg>
+  document.getElementById('sidebar').innerHTML = `
+    <div class="sidebar-section">
+      <div class="sidebar-label">Mode</div>
+      ${modesHtml}
+      <div class="sample-divider"></div>
+      <div class="sample-tab" id="btn-load-sample"><span class="mode-icon">📖</span><span>Load Sample</span></div>
+      <div class="sample-hint">See a pre-filled example storyboard with all 4 modes in action.</div>
     </div>
-    <div class="panel-info">
-      <div class="scene-label">Victory — Hero Stands · Fade to Black</div>
-      <div class="tags">
-        <span class="tag tag-cam">MEDIUM WIDE</span>
-        <span class="tag tag-move">SLOW DOLLY BACK</span>
-        <span class="tag tag-lens">85mm PORTRAIT</span>
-        <span class="tag tag-fx">MOONLIGHT SHAFT · FADE</span>
-      </div>
-      <div class="scene-desc">Hero stands tall over defeated villain. Single moonlight shaft breaks through cloud and illuminates the hero. Camera slowly dollies backward over 8 seconds, making the hero appear smaller against the night sky. Fade to black.</div>
-      <div class="motion-guide">
-        <span class="arrow">▶</span>Camera: slow dolly backward (8s), hero shrinks to silhouette<br/>
-        <span class="arrow">▶</span>Moonlight: shaft brightens over 3s → holds → scene fades<br/>
-        <span class="arrow">▶</span>Fade: linear black fade over final 2s · title card cut
-      </div>
-      <div class="audio-bar">
-        <span class="audio-icon">♫</span>
-        <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
-        <span>music resolves · rain fades · single piano note · silence</span>
-      </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Characters</div>
+      <div>${charsHtml}</div>
+      <button class="btn btn-ghost" id="btn-add-character" style="margin-top:10px;width:100%;font-size:0.65rem">+ Add Character</button>
     </div>
-  </div>
 
-</div><!-- /scene-grid ACT III -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Export</div>
+      <div class="export-item" data-export="html"><span class="export-icon">🌐</span> Shareable HTML</div>
+      <div class="export-item" data-export="pdf"><span class="export-icon">📄</span> PDF</div>
+      <div class="export-item" data-export="json"><span class="export-icon">💾</span> JSON Backup</div>
+    </div>
 
-<!-- ── Camera Angles Legend ── -->
-<div class="act-title" style="font-size:1.1rem; color:#64c8ff; border-color:#64c8ff; margin-top:60px;">
-  Camera Angles &amp; Motion Reference
-</div>
-<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:40px;">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Project Info</div>
+      <div class="project-stat">Panels <span>${App.project.panels.length}</span></div>
+      <div class="project-stat">Duration <span>${formatDuration(totalDuration())}</span></div>
+      <div class="project-stat">Acts <span>${App.project.acts.length}</span></div>
+      <div class="project-stat">Format
+        <select class="ratio-select" id="ratio-select">
+          <option value="16:9" ${App.project.aspectRatio === '16:9' ? 'selected' : ''}>16:9 — YouTube</option>
+          <option value="9:16" ${App.project.aspectRatio === '9:16' ? 'selected' : ''}>9:16 — TikTok / Shorts</option>
+          <option value="1:1"  ${App.project.aspectRatio === '1:1'  ? 'selected' : ''}>1:1 — Instagram</option>
+        </select>
+      </div>
+    </div>`;
+
+  // Wire up
+  document.querySelectorAll('.mode-tab').forEach(el => {
+    el.onclick = () => { App.ui.activeMode = el.dataset.mode; render(); };
+  });
+  document.getElementById('btn-load-sample').onclick = loadSample;
+  document.getElementById('btn-add-character').onclick = addCharacter;
+  document.querySelectorAll('.export-item').forEach(el => {
+    el.onclick = () => exportProject(el.dataset.export);
+  });
+  document.getElementById('ratio-select').onchange = (e) => {
+    App.project.aspectRatio = e.target.value;
+    saveToStorage();
+    render();
+  };
+}
+
+function renderTimeline() {
+  const bar = document.getElementById('timeline-bar');
+  if (App.project.panels.length === 0) {
+    bar.innerHTML = '<span class="timeline-bar-empty">Timeline · empty</span>';
+    return;
+  }
+  const actColors = ['var(--teal)', 'var(--sage)', 'var(--lavender)', 'var(--clay)'];
+  let html = '';
+  App.project.acts.forEach((name, actIdx) => {
+    const panels = App.project.panels.filter(p => p.act === actIdx);
+    if (panels.length === 0 && actIdx > 0) return;
+    const pillClass = (actIdx % 2) === 0 ? 'tl-act-1' : 'tl-act-2';
+    html += '<span class="tl-act-pill ' + pillClass + '">' + escapeHtml(name) + '</span>';
+    html += '<div class="tl-dot" style="background:' + actColors[actIdx % 4] + '"></div>';
+    panels.forEach(p => {
+      html += '<div class="tl-line"></div>';
+      html += '<div class="tl-thumb' + (App.ui.selectedPanelId === p.id ? ' active' : '') + '" data-panel-id="' + p.id + '">' + renderPanelScene(p) + '</div>';
+    });
+    html += '<div class="tl-line"></div><div class="tl-add" data-act="' + actIdx + '">+</div><div style="width:16px"></div>';
+  });
+  bar.innerHTML = html;
+  bar.onclick = (e) => {
+    const thumb = e.target.closest('.tl-thumb');
+    if (thumb) { App.ui.selectedPanelId = thumb.dataset.panelId; render(); return; }
+    const add = e.target.closest('.tl-add');
+    if (add) { addPanel(Number(add.dataset.act)); }
+  };
+}
+
+function renderViewToggle() {
+  const row = document.getElementById('view-toggle-row');
+  if (App.project.panels.length === 0) { row.innerHTML = ''; return; }
+  const totalWords = totalVoiceoverWords();
+  const totalRead = Math.ceil(totalWords / 150 * 60);
+  row.innerHTML = `
+    <div class="view-toggle">
+      <button class="view-tab ${App.ui.view === 'grid' ? 'active' : ''}" data-view="grid">
+        <span class="view-tab-icon">▦</span> Grid
+      </button>
+      <button class="view-tab ${App.ui.view === 'outline' ? 'active' : ''}" data-view="outline">
+        <span class="view-tab-icon">☰</span> Outline
+      </button>
+    </div>
+    <div class="view-meta">
+      Voiceover total: <strong>${totalWords} words</strong> · ~<strong>${totalRead}s</strong> read time
+    </div>`;
+  row.querySelectorAll('.view-tab').forEach(el => {
+    el.onclick = () => { App.ui.view = el.dataset.view; render(); };
+  });
+}
 
 
-  <div style="background:#0f0f1c; border:1px solid #1e1e30; border-radius:4px; padding:16px;">
-    <div style="color:#ff9800; font-family:'Rajdhani',sans-serif; font-size:1rem; letter-spacing:.15em; margin-bottom:8px;">📷 SHOT TYPES USED</div>
-    <div style="font-size:0.7rem; color:#888; line-height:2;">
-      <span style="color:#ff9800">EWS</span> Extreme Wide Shot — Establishing<br/>
-      <span style="color:#ff9800">ECU</span> Extreme Close-Up — Emotion<br/>
-      <span style="color:#ff9800">MS</span> &nbsp;Medium Shot — Action readable<br/>
-      <span style="color:#ff9800">MW</span> &nbsp;Medium Wide — Two-person fight<br/>
-      <span style="color:#ff9800">OTS</span> Over the Shoulder — Threat POV<br/>
-      <span style="color:#ff9800">TOP</span> Overhead / Bird's Eye — Geometry<br/>
-    </div>
-  </div>
-  <div style="background:#0f0f1c; border:1px solid #1e1e30; border-radius:4px; padding:16px;">
-    <div style="color:#ff3c5a; font-family:'Rajdhani',sans-serif; font-size:1rem; letter-spacing:.15em; margin-bottom:8px;">🎥 CAMERA MOVES</div>
-    <div style="font-size:0.7rem; color:#888; line-height:2;">
-      <span style="color:#ff3c5a">DOLLY</span> Physical push in/out on rails<br/>
-      <span style="color:#ff3c5a">WHIP PAN</span> Fast horizontal rotation<br/>
-      <span style="color:#ff3c5a">SNAP ZOOM</span> Rapid optical zoom burst<br/>
-      <span style="color:#ff3c5a">ORBIT</span> 360° arc around subject<br/>
-      <span style="color:#ff3c5a">CRANE</span> Vertical rise / overhead<br/>
-      <span style="color:#ff3c5a">DUTCH TILT</span> Camera canted ~15° for dread<br/>
-    </div>
-  </div>
-  <div style="background:#0f0f1c; border:1px solid #1e1e30; border-radius:4px; padding:16px;">
-    <div style="color:#c080ff; font-family:'Rajdhani',sans-serif; font-size:1rem; letter-spacing:.15em; margin-bottom:8px;">⚡ ANIMATION TECHNIQUES</div>
-    <div style="font-size:0.7rem; color:#888; line-height:2;">
-      <span style="color:#c080ff">SMEAR</span> Motion-blur frame smear on fast hits<br/>
-      <span style="color:#c080ff">FREEZE</span> 2-frame hold on max-impact<br/>
-      <span style="color:#c080ff">SLOW-MO</span> 60fps → 40% playback speed<br/>
-      <span style="color:#c080ff">SPEED LINES</span> Manga-inspired radial lines<br/>
-      <span style="color:#c080ff">CLOTH SIM</span> Real-time fabric physics<br/>
-      <span style="color:#c080ff">PARTICLE</span> Dust, debris, rain particles<br/>
-    </div>
-  </div>
-  <div style="background:#0f0f1c; border:1px solid #1e1e30; border-radius:4px; padding:16px;">
-    <div style="color:#64c8ff; font-family:'Rajdhani',sans-serif; font-size:1rem; letter-spacing:.15em; margin-bottom:8px;">🎨 VISUAL STYLE GUIDE</div>
-    <div style="font-size:0.7rem; color:#888; line-height:2;">
-      <span style="color:#64c8ff">STYLE</span> Animated-Realism (semi-painterly)<br/>
-      <span style="color:#64c8ff">PALETTE</span> Desaturated + neon accent pops<br/>
-      <span style="color:#64c8ff">HERO COLOR</span> Red / orange rim (#ff3c5a)<br/>
-      <span style="color:#64c8ff">VILLAIN COLOR</span> Purple / violet (#c080ff)<br/>
-      <span style="color:#64c8ff">LIGHTING</span> Hard rim, soft fill, no key<br/>
-      <span style="color:#64c8ff">GRADE</span> High contrast, crushed blacks<br/>
-    </div>
-  </div>
-</div>
+function renderMain() {
+  const main = document.getElementById('panel-grid');
+  if (App.project.panels.length === 0) {
+    main.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">◇</div>
+        <div class="empty-title">Your storyboard is empty</div>
+        <div class="empty-desc">
+          Add your first panel to begin, or load the sample storyboard
+          to see a working example with voiceover scripts and all four creation modes.
+        </div>
+        <div class="empty-actions">
+          <button class="btn btn-primary" id="btn-add-first">+ Add First Panel</button>
+          <button class="btn btn-ghost" id="btn-load-sample-empty">📖 Load Sample</button>
+        </div>
+      </div>`;
+    document.getElementById('btn-add-first').onclick = () => addPanel();
+    document.getElementById('btn-load-sample-empty').onclick = loadSample;
+    return;
+  }
 
-</main>
+  let html = '';
+  if (App.ui.activeMode === 'template') {
+    html += renderTemplateGallery();
+  }
+  html += App.ui.view === 'outline' ? renderOutlineView() : renderPanelGrid();
+  main.innerHTML = html;
 
-<footer>
-  ◆ SHADOW STRIKE &nbsp;|&nbsp; ANIMATED-REALISM STORYBOARD &nbsp;|&nbsp; 10 SCENES &nbsp;|&nbsp; ~2:30 MIN &nbsp;|&nbsp; 2K / 24FPS ◆
-</footer>
+  if (App.ui.activeMode === 'template') wireTemplateGallery(main);
+  wirePanelActions(main);
+}
+
+function renderPanelGrid() {
+  let html = '';
+  App.project.acts.forEach((name, actIdx) => {
+    const panels = App.project.panels.filter(p => p.act === actIdx);
+    if (panels.length === 0) return;
+    html += '<div class="act-heading">' + escapeHtml(name) + '</div>';
+    html += '<div class="grid">';
+    panels.forEach(p => { html += renderPanelCard(p); });
+    html += '<div class="add-card" data-act="' + actIdx + '">';
+    html += '<div class="add-card-icon">＋</div><div class="add-card-label">Add Panel</div>';
+    html += '</div>';
+    html += '</div>';
+  });
+  return html;
+}
+
+function renderPanelCard(p) {
+  const idx = App.project.panels.indexOf(p) + 1;
+  const num = String(idx).padStart(2, '0');
+  const selected = App.ui.selectedPanelId === p.id ? ' selected' : '';
+  const desc = p.description ? escapeHtml(p.description) : '<em style="color:var(--muted)">No description yet</em>';
+  return `
+    <div class="panel-card${selected}" data-panel-id="${p.id}">
+      <span class="panel-badge">${num}</span>
+      <span class="panel-dur">${p.duration}s</span>
+      <span class="panel-mode m-${p.creationMode}">${capitalize(p.creationMode)}</span>
+      <div class="panel-scene">${renderPanelScene(p)}</div>
+      <div class="panel-body">
+        <div class="panel-title">${escapeHtml(p.label)}</div>
+        <div class="tags">
+          <span class="tag t-shot">${escapeHtml(p.shotType)}</span>
+          <span class="tag t-move">${escapeHtml(p.cameraMove)}</span>
+          <span class="tag t-emotion">${escapeHtml(p.emotion)}</span>
+          <span class="tag t-light">${escapeHtml(p.lighting)}</span>
+        </div>
+        <div class="panel-desc">${desc}</div>
+        <div class="panel-actions">
+          <button class="panel-btn" data-action="edit" data-id="${p.id}">Edit</button>
+          <button class="panel-btn" data-action="dupe" data-id="${p.id}">Duplicate</button>
+          <button class="panel-btn del" data-action="delete" data-id="${p.id}">Delete</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderOutlineView() {
+  const rows = App.project.panels.map((p, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    const wc = (p.voiceover || '').trim().split(/\s+/).filter(Boolean).length;
+    const vo = p.voiceover
+      ? '"' + escapeHtml(p.voiceover.slice(0, 120)) + (p.voiceover.length > 120 ? '…' : '') + '"'
+      : '<em>No voiceover yet</em>';
+    return `
+      <div class="outline-row" data-panel-id="${p.id}">
+        <div class="outline-num">${num}</div>
+        <div class="outline-body">
+          <div class="outline-title">${escapeHtml(p.label)} <span class="outline-dur">${p.duration}s · ${escapeHtml(p.creationMode)}</span></div>
+          <div class="outline-vo">${vo}</div>
+        </div>
+        <div class="outline-meta">${wc} words</div>
+      </div>`;
+  }).join('');
+  return '<div class="outline-list">' + rows + '</div>';
+}
+
+function renderTemplateGallery() {
+  return `
+    <div class="act-heading">Templates — click to add</div>
+    <div class="grid" style="margin-bottom:32px">
+      ${TEMPLATES.map(t => `
+        <div class="template-card" data-tpl-id="${t.id}">
+          <div class="template-name">${escapeHtml(t.label)}</div>
+          <div class="template-meta">${t.shotType} · ${t.cameraMove} · ${t.duration}s</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function wireTemplateGallery(root) {
+  root.querySelectorAll('.template-card').forEach(el => {
+    el.onclick = () => {
+      const tpl = TEMPLATES.find(t => t.id === el.dataset.tplId);
+      if (!tpl) return;
+      addPanel();
+      const newPanel = App.project.panels[App.project.panels.length - 1];
+      Object.assign(newPanel, tpl, { creationMode: 'template', templateId: tpl.id });
+      saveToStorage();
+      render();
+    };
+  });
+}
+
+function wirePanelActions(root) {
+  root.onclick = (e) => {
+    const action = e.target.dataset.action;
+    const id = e.target.dataset.id;
+    if (action === 'edit')   { App.ui.selectedPanelId = id; render(); return; }
+    if (action === 'dupe')   { duplicatePanel(id); return; }
+    if (action === 'delete') { deletePanel(id); return; }
+    const addCard = e.target.closest('.add-card');
+    if (addCard) { addPanel(Number(addCard.dataset.act)); return; }
+    const outlineRow = e.target.closest('.outline-row');
+    if (outlineRow) { App.ui.selectedPanelId = outlineRow.dataset.panelId; render(); return; }
+    const card = e.target.closest('.panel-card');
+    if (card && !e.target.closest('button')) { App.ui.selectedPanelId = card.dataset.panelId; render(); return; }
+  };
+}
+
+
+function renderEditor() {
+  const drawer = document.getElementById('editor-drawer');
+  const p = App.project.panels.find(x => x.id === App.ui.selectedPanelId);
+  if (!p) { drawer.style.display = 'none'; drawer.innerHTML = ''; return; }
+  drawer.style.display = 'flex';
+
+  const wc = (p.voiceover || '').trim().split(/\s+/).filter(Boolean).length;
+  const readTime = Math.ceil(wc / 150 * 60);
+  const overrun = readTime > p.duration;
+  const voMetaStyle = overrun ? 'color:var(--red-soft);font-weight:500' : 'color:var(--muted)';
+  const voMetaText = wc + ' words · ~' + readTime + 's read time' + (overrun ? ' · exceeds duration' : '');
+
+  const charChecks = App.project.characters.length === 0
+    ? '<span style="color:var(--muted);font-size:0.65rem">Add characters in sidebar</span>'
+    : App.project.characters.map(c => {
+        const on = (p.characters || []).includes(c.id);
+        const style = on ? 'color:' + c.color + ';border-color:' + c.color + '66;background:' + c.color + '14' : '';
+        return '<div class="char-ck ' + (on ? 'on' : '') + '" data-char-id="' + c.id + '" style="' + style + '">' +
+          '<span style="width:6px;height:6px;border-radius:50%;background:' + c.color + ';display:inline-block"></span>' +
+          escapeHtml(c.name) + '</div>';
+      }).join('');
+
+  drawer.innerHTML = `
+    <div class="drawer-header">
+      <div>
+        <div class="drawer-title">Editing Panel ${App.project.panels.indexOf(p) + 1}</div>
+        <div class="drawer-subtitle">${escapeHtml(p.label)} · ${capitalize(p.creationMode)} mode</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" id="drawer-close">Close</button>
+        <button class="btn btn-primary" id="drawer-apply">Save</button>
+      </div>
+    </div>
+    <div class="drawer-body">
+
+      <div class="field">
+        <div class="field-label">Label</div>
+        <input class="field-input" data-field="label" value="${escapeHtml(p.label)}"/>
+        <div class="field-label" style="margin-top:8px">Duration (s)</div>
+        <input class="field-input" type="number" min="1" data-field="duration" value="${p.duration}"/>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Shot Type</div>
+        <select class="field-select" data-field="shotType">${selectOptions(['wide','medium','close-up','aerial','POV'], p.shotType)}</select>
+        <div class="field-label" style="margin-top:8px">Camera Angle</div>
+        <select class="field-select" data-field="cameraAngle">${selectOptions(['low','eye','high','dutch'], p.cameraAngle)}</select>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Camera Move</div>
+        <select class="field-select" data-field="cameraMove">${selectOptions(['static','pan','dolly','handheld','zoom'], p.cameraMove)}</select>
+        <div class="field-label" style="margin-top:8px">Background</div>
+        <select class="field-select" data-field="background">${selectOptions(['alley','office','street','rooftop','studio','room','forest'], p.background)}</select>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Lighting</div>
+        <select class="field-select" data-field="lighting">${selectOptions(['dark','bright','neon','sunset','spotlight','silhouette'], p.lighting)}</select>
+        <div class="field-label" style="margin-top:8px">Emotion</div>
+        <select class="field-select" data-field="emotion">${selectOptions(['neutral','tense','excited','sad','mysterious','happy','angry','suspenseful'], p.emotion)}</select>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Characters</div>
+        <div class="char-checks">${charChecks}</div>
+        <div class="field-label" style="margin-top:8px">Visual Style</div>
+        <select class="field-select" data-field="visualStyle">${selectOptions(['animated-realism','minimal','sketch','comic','cinematic','flat'], p.visualStyle)}</select>
+      </div>
+
+      <div class="field" style="grid-column: span 2">
+        <div class="field-label">Description</div>
+        <textarea class="field-textarea" data-field="description">${escapeHtml(p.description)}</textarea>
+        <div class="field-label" style="margin-top:6px">Voiceover Script</div>
+        <textarea class="field-textarea" data-field="voiceover">${escapeHtml(p.voiceover)}</textarea>
+        <div style="font-size:0.6rem;letter-spacing:0.04em;${voMetaStyle};margin-top:4px">${voMetaText}</div>
+      </div>
+
+    </div>`;
+
+  drawer.querySelector('#drawer-close').onclick = () => { App.ui.selectedPanelId = null; render(); };
+  drawer.querySelector('#drawer-apply').onclick = () => { saveToStorage(); flashStatus('Saved'); };
+
+  drawer.querySelectorAll('[data-field]').forEach(el => {
+    el.oninput = () => {
+      const key = el.dataset.field;
+      const val = el.type === 'number' ? Number(el.value) : el.value;
+      p[key] = val;
+      // Live update other regions without losing focus
+      renderTimeline();
+      renderViewToggle();
+      renderStatusBar();
+      // Re-render the live voiceover meter
+      const wc2 = (p.voiceover || '').trim().split(/\s+/).filter(Boolean).length;
+      const rt2 = Math.ceil(wc2 / 150 * 60);
+      const meter = drawer.querySelector('[data-field="voiceover"]').nextElementSibling;
+      if (meter) {
+        const over = rt2 > p.duration;
+        meter.style.color = over ? 'var(--red-soft)' : 'var(--muted)';
+        meter.style.fontWeight = over ? '500' : 'normal';
+        meter.textContent = wc2 + ' words · ~' + rt2 + 's read time' + (over ? ' · exceeds duration' : '');
+      }
+      // If visible-on-card field changed, update only the card grid (preserve drawer focus)
+      if (['label','duration','shotType','cameraMove','emotion','lighting','description','background'].includes(key)) {
+        const main = document.getElementById('panel-grid');
+        main.innerHTML = App.ui.view === 'outline' ? renderOutlineView() : renderPanelGrid();
+        wirePanelActions(main);
+      }
+      // Update header subtitle
+      const sub = drawer.querySelector('.drawer-subtitle');
+      if (sub) sub.textContent = p.label + ' · ' + capitalize(p.creationMode) + ' mode';
+    };
+  });
+
+  drawer.querySelectorAll('[data-char-id]').forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.charId;
+      p.characters = p.characters || [];
+      if (p.characters.includes(id)) {
+        p.characters = p.characters.filter(x => x !== id);
+      } else {
+        p.characters.push(id);
+      }
+      saveToStorage();
+      render();
+    };
+  });
+}
+
+function renderStatusBar() {
+  const total = App.project.panels.length;
+  const dur = formatDuration(totalDuration());
+  const acts = App.project.acts.length;
+  const ratio = App.project.aspectRatio;
+  const words = totalVoiceoverWords();
+  document.getElementById('status-bar').innerHTML = `
+    <span><b>${total}</b> panels</span>
+    <span><b>${dur}</b> total</span>
+    <span><b>${acts}</b> acts</span>
+    <span><b>${ratio}</b></span>
+    <span><b>${words}</b> words voiceover</span>
+    <span class="status-bar-right" id="status-msg">Shot Builder Studio</span>`;
+}
+
+function flashStatus(msg) {
+  const el = document.getElementById('status-msg');
+  if (!el) return;
+  const prev = el.textContent;
+  el.textContent = msg;
+  el.style.color = 'var(--sage)';
+  setTimeout(() => { el.textContent = prev; el.style.color = ''; }, 1500);
+}
+
+// ====== INIT ======
+document.addEventListener('DOMContentLoaded', () => {
+  loadFromStorage();
+  render();
+});
+
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    saveToStorage();
+    flashStatus('Saved');
+  }
+});
+
+document.getElementById('btn-save').onclick = () => { saveToStorage(); flashStatus('Saved'); };
+document.getElementById('btn-undo').onclick = () => {
+  if (confirm('Reload from last saved version? Unsaved changes will be lost.')) {
+    if (loadFromStorage()) { render(); flashStatus('Restored'); }
+  }
+};
+</script>
 
 </body>
 </html>
