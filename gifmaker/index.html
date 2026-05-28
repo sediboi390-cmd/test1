@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GIF Maker — Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f6f3;--surface:#fff;--border:#e5e2da;
+  --accent:#10b981;--accent-hover:#059669;--accent-soft:rgba(16,185,129,.1);
+  --text:#1e1e1e;--muted:#888580;--danger:#dc2626;
+  --radius:14px;--shadow:0 2px 12px rgba(0,0,0,.06);
+}
+html.dark{
+  --bg:#111113;--surface:#1c1c1f;--border:#2a2a2e;
+  --text:#ececef;--muted:#7a7a82;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.hidden{display:none!important}
+
+
+/* ── Header ── */
+header{max-width:860px;margin:0 auto;padding:40px 24px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--muted);text-decoration:none;padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);transition:all .15s}
+.back-btn:hover{color:var(--accent);border-color:var(--accent)}
+.header-brand{display:flex;align-items:center;gap:10px}
+.header-icon{width:40px;height:40px;background:linear-gradient(135deg,#10b981,#34d399);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.header-brand h1{font-size:1.3rem;font-weight:700;letter-spacing:-.02em}
+.header-brand p{font-size:.78rem;color:var(--muted)}
+.dark-toggle{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.dark-toggle:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Main layout ── */
+main{max-width:860px;margin:24px auto 80px;padding:0 24px;display:flex;flex-direction:column;gap:16px}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:6px;box-shadow:var(--shadow)}
+.tab-btn{flex:1;padding:10px 14px;border:none;background:transparent;color:var(--muted);font:inherit;font-size:.88rem;font-weight:600;cursor:pointer;border-radius:10px;transition:all .15s}
+.tab-btn.active{background:var(--accent);color:#fff}
+.tab-btn:not(.active):hover{background:var(--accent-soft);color:var(--accent)}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+.card-label{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+
+/* ── Drop zone ── */
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:var(--accent-soft)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:2.2rem;margin-bottom:10px}
+.drop-title{font-size:.95rem;font-weight:600;margin-bottom:4px}
+.drop-hint{font-size:.78rem;color:var(--muted)}
+
+
+/* ── Form controls ── */
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.form-group input,.form-group select{padding:9px 12px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font:inherit;font-size:.88rem;outline:none;transition:border-color .15s}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+html.dark .form-group input,html.dark .form-group select{background:#18181b}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:9px;font:inherit;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none;border:none}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:5px 10px;font-size:.75rem}
+.btn-danger{background:transparent;color:var(--danger);border:1px solid transparent}
+.btn-danger:hover{background:#fee2e2;border-color:#fca5a5}
+
+/* ── Video preview ── */
+#videoPreview{width:100%;max-height:300px;border-radius:10px;background:#000;display:block;margin-top:12px}
+
+/* ── Image grid ── */
+.img-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:12px}
+.thumb-item{position:relative;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--bg)}
+.thumb-item img{width:100%;height:88px;object-fit:cover;display:block}
+.thumb-controls{display:flex;align-items:center;justify-content:space-between;padding:4px 6px;background:var(--surface)}
+.thumb-controls span{font-size:.68rem;color:var(--muted);font-weight:500}
+.thumb-controls .thumb-btns{display:flex;gap:2px}
+.thumb-btn{border:none;background:transparent;cursor:pointer;padding:2px 4px;border-radius:4px;font-size:.75rem;color:var(--muted);transition:all .1s}
+.thumb-btn:hover{background:var(--accent-soft);color:var(--accent)}
+.thumb-btn.del:hover{background:#fee2e2;color:var(--danger)}
+
+/* ── Progress ── */
+.progress-wrap{margin-top:14px}
+.progress-label{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:6px}
+.progress-bar-bg{height:8px;background:var(--border);border-radius:999px;overflow:hidden}
+.progress-bar{height:100%;background:var(--accent);border-radius:999px;transition:width .2s;width:0%}
+
+/* ── Result ── */
+.result-section{text-align:center;padding:16px 0 0}
+.result-gif{max-width:100%;border-radius:10px;border:1px solid var(--border);margin-bottom:14px}
+.result-meta{font-size:.78rem;color:var(--muted);margin-bottom:14px}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e1e1e;color:#fff;padding:10px 20px;border-radius:999px;font-size:.82rem;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+html.dark .toast{background:#ececef;color:#111}
+
+footer{text-align:center;padding:16px 0 40px;font-size:.75rem;color:var(--muted)}
+
+@media(max-width:600px){
+  header{padding:28px 16px 0}
+  main{padding:0 16px}
+  .form-row{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+
+<header>
+  <a href="../" class="back-btn">← Back to Hub</a>
+  <div class="header-brand">
+    <div class="header-icon">🎞️</div>
+    <div><h1>GIF Maker</h1><p>Convert videos or images into animated GIFs</p></div>
+  </div>
+  <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">🌙</button>
+</header>
+
+<main>
+
+  <!-- Mode Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tabVideo" onclick="switchTab('video')">🎬 Video to GIF</button>
+    <button class="tab-btn" id="tabImages" onclick="switchTab('images')">🖼️ Images to GIF</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       MODE 1: VIDEO TO GIF
+  ══════════════════════════════════════════════ -->
+  <div id="panelVideo">
+
+    <!-- Upload -->
+    <div class="card">
+      <div class="card-label">1 — Upload Video</div>
+      <div class="drop-zone" id="videoDrop">
+        <input type="file" id="videoInput" accept="video/mp4,video/webm,video/quicktime,.mov" />
+        <div class="drop-icon">🎬</div>
+        <div class="drop-title">Drop a video here</div>
+        <div class="drop-hint">MP4, WebM, MOV · click or drag &amp; drop</div>
+      </div>
+      <video id="videoPreview" class="hidden" controls playsinline></video>
+    </div>
+
+    <!-- Settings -->
+    <div class="card" id="videoSettings" style="display:none">
+      <div class="card-label">2 — Settings</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Time (s)</label>
+          <input type="number" id="startTime" value="0" min="0" step="0.1" placeholder="0"/>
+        </div>
+        <div class="form-group">
+          <label>End Time (s)</label>
+          <input type="number" id="endTime" value="3" min="0" step="0.1" placeholder="3"/>
+        </div>
+        <div class="form-group">
+          <label>FPS</label>
+          <select id="fps">
+            <option value="10">10 FPS</option>
+            <option value="15" selected>15 FPS</option>
+            <option value="20">20 FPS</option>
+            <option value="24">24 FPS</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Output Width</label>
+          <select id="outputWidth">
+            <option value="320">320 px</option>
+            <option value="480" selected>480 px</option>
+            <option value="640">640 px</option>
+            <option value="0">Original</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Speed</label>
+          <select id="speed">
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1× (Normal)</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quality</label>
+          <select id="quality">
+            <option value="20">Low</option>
+            <option value="10" selected>Medium</option>
+            <option value="1">High</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" id="convertVideoBtn" onclick="convertVideo()">🎞️ Convert to GIF</button>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="card hidden" id="videoProgress">
+      <div class="card-label">Converting…</div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span id="videoProgressText">Extracting frames…</span><span id="videoProgressPct">0%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar" id="videoProgressBar"></div></div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="card hidden" id="videoResult">
+      <div class="card-label">Result</div>
+      <div class="result-section">
+        <img id="videoGifPreview" class="result-gif" alt="Generated GIF"/>
+        <div class="result-meta" id="videoGifMeta"></div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <a class="btn btn-primary" id="videoDownloadBtn">⬇️ Download GIF</a>
+          <button class="btn btn-outline" onclick="resetVideo()">↺ Make Another</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end panelVideo -->
+
+
+
+  <!-- ══════════════════════════════════════════════
+       MODE 2: IMAGES TO GIF
+  ══════════════════════════════════════════════ -->
+  <div id="panelImages" class="hidden">
+
+    <!-- Upload -->
+    <div class="card">
+      <div class="card-label">1 — Upload Images</div>
+      <div class="drop-zone" id="imagesDrop">
+        <input type="file" id="imagesInput" accept="image/jpeg,image/png,image/webp" multiple />
+        <div class="drop-icon">🖼️</div>
+        <div class="drop-title">Drop images here</div>
+        <div class="drop-hint">JPG, PNG, WEBP · multiple files · click or drag &amp; drop</div>
+      </div>
+      <div id="imgThumbs" class="img-thumbs"></div>
+    </div>
+
+    <!-- Settings -->
+    <div class="card" id="imgSettings" style="display:none">
+      <div class="card-label">2 — Settings</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Frame Delay (ms)</label>
+          <input type="number" id="frameDelay" value="200" min="50" max="1000" step="10" placeholder="200"/>
+        </div>
+        <div class="form-group">
+          <label>Output Width</label>
+          <select id="imgOutputWidth">
+            <option value="320">320 px</option>
+            <option value="480" selected>480 px</option>
+            <option value="640">640 px</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Loop</label>
+          <select id="imgLoop">
+            <option value="0">Infinite</option>
+            <option value="1">1×</option>
+            <option value="2">2×</option>
+            <option value="3">3×</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quality</label>
+          <select id="imgQuality">
+            <option value="20">Low</option>
+            <option value="10" selected>Medium</option>
+            <option value="1">High</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" id="convertImagesBtn" onclick="convertImages()">🎞️ Convert to GIF</button>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="card hidden" id="imagesProgress">
+      <div class="card-label">Converting…</div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span id="imgProgressText">Building frames…</span><span id="imgProgressPct">0%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar" id="imgProgressBar"></div></div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="card hidden" id="imagesResult">
+      <div class="card-label">Result</div>
+      <div class="result-section">
+        <img id="imagesGifPreview" class="result-gif" alt="Generated GIF"/>
+        <div class="result-meta" id="imagesGifMeta"></div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <a class="btn btn-primary" id="imagesDownloadBtn">⬇️ Download GIF</a>
+          <button class="btn btn-outline" onclick="resetImages()">↺ Make Another</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end panelImages -->
+
+</main>
+<footer>Flow · GIF Maker</footer>
+<div class="toast" id="toast"></div>
+
+
+
+<script>
+// ── Dark mode ──
+const html = document.documentElement;
+const dtBtn = document.getElementById('darkToggle');
+const saved = localStorage.getItem('flow.darkMode');
+if(saved==='true'||(saved===null&&window.matchMedia('(prefers-color-scheme:dark)').matches)){
+  html.classList.add('dark'); dtBtn.textContent='☀️';
+}
+dtBtn.addEventListener('click',()=>{
+  const d=html.classList.toggle('dark');
+  dtBtn.textContent=d?'☀️':'🌙';
+  localStorage.setItem('flow.darkMode',d);
+});
+
+// ── Toast ──
+function showToast(msg,dur=3000){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+// ── Tab switching ──
+function switchTab(mode){
+  document.getElementById('tabVideo').classList.toggle('active',mode==='video');
+  document.getElementById('tabImages').classList.toggle('active',mode==='images');
+  document.getElementById('panelVideo').classList.toggle('hidden',mode!=='video');
+  document.getElementById('panelImages').classList.toggle('hidden',mode!=='images');
+}
+
+// ══════════════════════════════════════════════
+// MODE 1: VIDEO TO GIF
+// ══════════════════════════════════════════════
+let videoFile=null;
+let videoEl=null;
+
+const videoDrop=document.getElementById('videoDrop');
+const videoInput=document.getElementById('videoInput');
+
+videoDrop.addEventListener('dragover',e=>{e.preventDefault();videoDrop.classList.add('drag-over')});
+videoDrop.addEventListener('dragleave',()=>videoDrop.classList.remove('drag-over'));
+videoDrop.addEventListener('drop',e=>{
+  e.preventDefault(); videoDrop.classList.remove('drag-over');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type.startsWith('video/')) loadVideo(f);
+  else showToast('Please drop a video file (MP4, WebM, MOV)');
+});
+videoInput.addEventListener('change',e=>{
+  if(e.target.files[0]) loadVideo(e.target.files[0]);
+});
+
+function loadVideo(file){
+  videoFile=file;
+  const url=URL.createObjectURL(file);
+  const v=document.getElementById('videoPreview');
+  v.src=url; v.classList.remove('hidden');
+  v.onloadedmetadata=()=>{
+    document.getElementById('endTime').value=Math.min(3,Math.floor(v.duration*10)/10);
+    document.getElementById('endTime').max=v.duration;
+    document.getElementById('startTime').max=v.duration;
+    document.getElementById('videoSettings').style.display='';
+  };
+  videoDrop.querySelector('.drop-title').textContent=file.name;
+  videoDrop.querySelector('.drop-hint').textContent='Click to change video';
+}
+
+
+function convertVideo(){
+  if(!videoFile){showToast('Please upload a video first');return;}
+  const start=parseFloat(document.getElementById('startTime').value)||0;
+  let end=parseFloat(document.getElementById('endTime').value)||3;
+  const fps=parseInt(document.getElementById('fps').value)||15;
+  const outWidth=parseInt(document.getElementById('outputWidth').value)||480;
+  const speed=parseFloat(document.getElementById('speed').value)||1;
+  const quality=parseInt(document.getElementById('quality').value)||10;
+
+  if(end<=start){showToast('End time must be greater than start time');return;}
+  const rawDur=end-start;
+  const maxDur=15;
+  if(rawDur>maxDur){showToast('Max duration is 15 seconds. Adjusting end time.');end=start+maxDur;}
+  const duration=end-start;
+
+  document.getElementById('videoProgress').classList.remove('hidden');
+  document.getElementById('videoSettings').style.display='none';
+  document.getElementById('convertVideoBtn').disabled=true;
+  setVideoProgress(0,'Preparing video…');
+
+  const v=document.createElement('video');
+  v.src=URL.createObjectURL(videoFile);
+  v.muted=true; v.playsInline=true;
+
+  v.addEventListener('loadedmetadata',()=>{
+    const natW=v.videoWidth;
+    const natH=v.videoHeight;
+    const w=outWidth>0?outWidth:natW;
+    const h=Math.round(natH*(w/natW));
+
+    const canvas=document.createElement('canvas');
+    canvas.width=w; canvas.height=h;
+    const ctx=canvas.getContext('2d');
+
+    const totalFrames=Math.floor(duration*fps);
+    const interval=1/fps;
+    const frameDelay=Math.round((1000/fps)/speed);
+
+    const gif=new GIF({
+      workers:2,quality:quality,
+      width:w,height:h,
+      workerScript:'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js',
+      repeat:0
+    });
+
+    let frameIdx=0;
+    const frames=[];
+
+    // Collect all seek timestamps
+    for(let i=0;i<totalFrames;i++){
+      frames.push(start+i*interval);
+    }
+
+    function seekAndCapture(){
+      if(frameIdx>=frames.length){
+        setVideoProgress(80,'Encoding GIF…');
+        gif.render();
+        return;
+      }
+      const pct=Math.round((frameIdx/frames.length)*75);
+      setVideoProgress(pct,`Extracting frame ${frameIdx+1} / ${frames.length}…`);
+      v.currentTime=frames[frameIdx];
+    }
+
+    v.addEventListener('seeked',function onSeeked(){
+      ctx.drawImage(v,0,0,w,h);
+      gif.addFrame(ctx,{copy:true,delay:frameDelay});
+      frameIdx++;
+      seekAndCapture();
+    },{passive:true});
+
+    gif.on('progress',p=>{
+      const pct=80+Math.round(p*18);
+      setVideoProgress(pct,'Encoding GIF…');
+    });
+
+    gif.on('finished',blob=>{
+      setVideoProgress(100,'Done!');
+      showVideoResult(blob,w,h);
+    });
+
+    gif.on('error',err=>{
+      console.error(err);
+      showToast('GIF encoding failed. Try a shorter clip or lower quality.');
+      resetVideoProgress();
+    });
+
+    // kick off
+    seekAndCapture();
+  });
+  v.load();
+}
+
+function setVideoProgress(pct,text){
+  document.getElementById('videoProgressBar').style.width=pct+'%';
+  document.getElementById('videoProgressPct').textContent=pct+'%';
+  document.getElementById('videoProgressText').textContent=text;
+}
+
+function showVideoResult(blob,w,h){
+  const url=URL.createObjectURL(blob);
+  const img=document.getElementById('videoGifPreview');
+  img.src=url;
+  const dl=document.getElementById('videoDownloadBtn');
+  dl.href=url; dl.download='flow-gif.gif';
+  const kb=(blob.size/1024).toFixed(1);
+  document.getElementById('videoGifMeta').textContent=`${w}×${h}px · ${kb} KB`;
+  document.getElementById('videoProgress').classList.add('hidden');
+  document.getElementById('videoResult').classList.remove('hidden');
+}
+
+function resetVideoProgress(){
+  document.getElementById('videoProgress').classList.add('hidden');
+  document.getElementById('videoSettings').style.display='';
+  document.getElementById('convertVideoBtn').disabled=false;
+}
+
+function resetVideo(){
+  videoFile=null;
+  document.getElementById('videoPreview').classList.add('hidden');
+  document.getElementById('videoPreview').src='';
+  document.getElementById('videoSettings').style.display='none';
+  document.getElementById('videoResult').classList.add('hidden');
+  document.getElementById('videoProgress').classList.add('hidden');
+  document.getElementById('videoDrop').querySelector('.drop-title').textContent='Drop a video here';
+  document.getElementById('videoDrop').querySelector('.drop-hint').textContent='MP4, WebM, MOV · click or drag & drop';
+  document.getElementById('videoInput').value='';
+  document.getElementById('convertVideoBtn').disabled=false;
+}
+
+
+// ══════════════════════════════════════════════
+// MODE 2: IMAGES TO GIF
+// ══════════════════════════════════════════════
+let imageFiles=[];
+
+const imagesDrop=document.getElementById('imagesDrop');
+const imagesInput=document.getElementById('imagesInput');
+
+imagesDrop.addEventListener('dragover',e=>{e.preventDefault();imagesDrop.classList.add('drag-over')});
+imagesDrop.addEventListener('dragleave',()=>imagesDrop.classList.remove('drag-over'));
+imagesDrop.addEventListener('drop',e=>{
+  e.preventDefault(); imagesDrop.classList.remove('drag-over');
+  const files=[...e.dataTransfer.files].filter(f=>f.type.match(/image\/(jpeg|png|webp)/));
+  if(files.length===0){showToast('Please drop image files (JPG, PNG, WEBP)');return;}
+  addImages(files);
+});
+imagesInput.addEventListener('change',e=>{
+  const files=[...e.target.files].filter(f=>f.type.match(/image\/(jpeg|png|webp)/));
+  if(files.length) addImages(files);
+  e.target.value='';
+});
+
+function addImages(files){
+  files.forEach(f=>{
+    imageFiles.push({file:f,url:URL.createObjectURL(f),name:f.name});
+  });
+  renderThumbs();
+  document.getElementById('imgSettings').style.display=imageFiles.length>0?'':'none';
+}
+
+function renderThumbs(){
+  const container=document.getElementById('imgThumbs');
+  container.innerHTML='';
+  imageFiles.forEach((item,i)=>{
+    const div=document.createElement('div');
+    div.className='thumb-item';
+    div.innerHTML=`
+      <img src="${item.url}" alt="${item.name}" loading="lazy"/>
+      <div class="thumb-controls">
+        <span>${i+1}</span>
+        <div class="thumb-btns">
+          <button class="thumb-btn" title="Move up" onclick="moveImg(${i},-1)">↑</button>
+          <button class="thumb-btn" title="Move down" onclick="moveImg(${i},1)">↓</button>
+          <button class="thumb-btn del" title="Remove" onclick="removeImg(${i})">✕</button>
+        </div>
+      </div>`;
+    container.appendChild(div);
+  });
+  document.getElementById('imgSettings').style.display=imageFiles.length>0?'':'none';
+  if(imageFiles.length>0){
+    imagesDrop.querySelector('.drop-title').textContent=imageFiles.length+' image'+(imageFiles.length>1?'s':'')+' selected';
+    imagesDrop.querySelector('.drop-hint').textContent='Click or drop to add more';
+  } else {
+    imagesDrop.querySelector('.drop-title').textContent='Drop images here';
+    imagesDrop.querySelector('.drop-hint').textContent='JPG, PNG, WEBP · multiple files';
+  }
+}
+
+function moveImg(idx,dir){
+  const nIdx=idx+dir;
+  if(nIdx<0||nIdx>=imageFiles.length) return;
+  [imageFiles[idx],imageFiles[nIdx]]=[imageFiles[nIdx],imageFiles[idx]];
+  renderThumbs();
+}
+
+function removeImg(idx){
+  URL.revokeObjectURL(imageFiles[idx].url);
+  imageFiles.splice(idx,1);
+  renderThumbs();
+}
+
+function convertImages(){
+  if(imageFiles.length<2){showToast('Please add at least 2 images');return;}
+  const delay=parseInt(document.getElementById('frameDelay').value)||200;
+  const w=parseInt(document.getElementById('imgOutputWidth').value)||480;
+  const loop=parseInt(document.getElementById('imgLoop').value)||0;
+  const quality=parseInt(document.getElementById('imgQuality').value)||10;
+
+  document.getElementById('imagesProgress').classList.remove('hidden');
+  document.getElementById('imgSettings').style.display='none';
+  document.getElementById('convertImagesBtn').disabled=true;
+  setImgProgress(0,'Loading images…');
+
+  // Load all images first
+  const imgs=[];
+  let loaded=0;
+  imageFiles.forEach((item,i)=>{
+    const img=new Image();
+    img.onload=()=>{
+      imgs[i]=img; loaded++;
+      setImgProgress(Math.round((loaded/imageFiles.length)*30),'Loading images…');
+      if(loaded===imageFiles.length) buildImagesGif(imgs,w,delay,loop,quality);
+    };
+    img.onerror=()=>{showToast('Failed to load image: '+item.name);resetImagesProgress();};
+    img.src=item.url;
+  });
+}
+
+function buildImagesGif(imgs,w,delay,loop,quality){
+  setImgProgress(35,'Building frames…');
+  const canvas=document.createElement('canvas');
+  const h=Math.round(imgs[0].height*(w/imgs[0].width));
+  canvas.width=w; canvas.height=h;
+  const ctx=canvas.getContext('2d');
+
+  const gif=new GIF({
+    workers:2,quality:quality,
+    width:w,height:h,
+    workerScript:'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js',
+    repeat:loop
+  });
+
+  imgs.forEach((img,i)=>{
+    ctx.clearRect(0,0,w,h);
+    ctx.drawImage(img,0,0,w,h);
+    gif.addFrame(ctx,{copy:true,delay:delay});
+    setImgProgress(35+Math.round((i/imgs.length)*40),'Building frame '+(i+1)+' / '+imgs.length+'…');
+  });
+
+  gif.on('progress',p=>{
+    const pct=75+Math.round(p*23);
+    setImgProgress(pct,'Encoding GIF…');
+  });
+  gif.on('finished',blob=>{
+    setImgProgress(100,'Done!');
+    showImagesResult(blob,w,h);
+  });
+  gif.on('error',err=>{
+    console.error(err);
+    showToast('GIF encoding failed. Try fewer images or lower quality.');
+    resetImagesProgress();
+  });
+
+  gif.render();
+}
+
+function setImgProgress(pct,text){
+  document.getElementById('imgProgressBar').style.width=pct+'%';
+  document.getElementById('imgProgressPct').textContent=pct+'%';
+  document.getElementById('imgProgressText').textContent=text;
+}
+
+function showImagesResult(blob,w,h){
+  const url=URL.createObjectURL(blob);
+  const img=document.getElementById('imagesGifPreview');
+  img.src=url;
+  const dl=document.getElementById('imagesDownloadBtn');
+  dl.href=url; dl.download='flow-gif.gif';
+  const kb=(blob.size/1024).toFixed(1);
+  document.getElementById('imagesGifMeta').textContent=`${w}×${h}px · ${kb} KB · ${imageFiles.length} frames`;
+  document.getElementById('imagesProgress').classList.add('hidden');
+  document.getElementById('imagesResult').classList.remove('hidden');
+}
+
+function resetImagesProgress(){
+  document.getElementById('imagesProgress').classList.add('hidden');
+  document.getElementById('imgSettings').style.display='';
+  document.getElementById('convertImagesBtn').disabled=false;
+}
+
+function resetImages(){
+  imageFiles.forEach(f=>URL.revokeObjectURL(f.url));
+  imageFiles=[];
+  renderThumbs();
+  document.getElementById('imagesResult').classList.add('hidden');
+  document.getElementById('imagesProgress').classList.add('hidden');
+  document.getElementById('imgSettings').style.display='none';
+  document.getElementById('convertImagesBtn').disabled=false;
+  document.getElementById('imagesInput').value='';
+}
+</script>
+</body>
+</html>
