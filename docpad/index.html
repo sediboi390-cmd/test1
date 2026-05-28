@@ -434,17 +434,25 @@ body {
    The browser's native print engine handles fonts, images, page breaks,
    and PDF generation — way more reliable than html2canvas/html2pdf.       */
 @media print {
-  /* Reset page chrome — let the document fill the printable area */
+  /* Reset page chrome — let the document fill the printable area.
+     `@page { margin: 0 }` removes the page margin area, which is what most
+     browsers use to print headers/footers (URL, date, page numbers). On
+     Chrome / Edge this hides them automatically; on Firefox the user still
+     needs to uncheck "Print headers and footers" in the dialog.
+     We compensate by adding the actual document margins as body padding. */
   @page {
-    margin: 0.75in;
+    margin: 0;
+    size: auto;
   }
   html, body {
     background: #fff !important;
     height: auto;
+    margin: 0 !important;
   }
   body {
     font-family: 'Charter', Georgia, 'Times New Roman', serif;
     color: #000;
+    padding: 0.75in !important;
   }
 
   /* Hide everything in the app — home, topbar, toolbar, modal, footer, toast */
@@ -603,11 +611,14 @@ body {
   <div class="modal">
     <h3>Save as PDF</h3>
     <p>When the print dialog opens:</p>
-    <ol style="margin: 0 0 1.25rem 1.25rem; color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">
+    <ol style="margin: 0 0 1rem 1.25rem; color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">
       <li>Set <strong>Destination</strong> to <strong>Save as PDF</strong></li>
       <li>Pick your page size and orientation</li>
       <li>Click <strong>Save</strong></li>
     </ol>
+    <p style="font-size:0.8rem; color: var(--text-soft); margin-bottom: 1.25rem; padding: 0.6rem 0.75rem; background: var(--bg-soft); border-radius: 6px; line-height: 1.5;">
+      💡 To remove the URL and date from the printed pages, expand <strong>More settings</strong> and uncheck <strong>Headers and footers</strong>.
+    </p>
     <div class="modal-actions">
       <button class="btn" id="pdf-cancel-btn">Cancel</button>
       <button class="btn btn-primary" id="pdf-download-confirm-btn">Open print dialog</button>
