@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Image to Text — Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f6f3;--surface:#fff;--border:#e5e2da;
+  --accent:#6c47ff;--accent-hover:#5a38e0;
+  --text:#1e1e1e;--muted:#888580;
+  --radius:14px;--shadow:0 2px 12px rgba(0,0,0,.06);
+}
+html.dark{--bg:#111113;--surface:#1c1c1f;--border:#2a2a2e;--text:#ececef;--muted:#7a7a82}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.hidden{display:none!important}
+
+/* Header */
+header{max-width:820px;margin:0 auto;padding:40px 24px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--muted);text-decoration:none;padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);transition:all .15s}
+.back-btn:hover{color:var(--accent);border-color:var(--accent)}
+.header-brand{display:flex;align-items:center;gap:10px}
+.header-icon{width:40px;height:40px;background:linear-gradient(135deg,#6c47ff,#a78bfa);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.header-brand h1{font-size:1.3rem;font-weight:700;letter-spacing:-.02em}
+.header-brand p{font-size:.78rem;color:var(--muted)}
+.dark-toggle{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.dark-toggle:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Main */
+main{max-width:820px;margin:28px auto 80px;padding:0 24px;display:flex;flex-direction:column;gap:18px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+.card-label{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+
+/* Drop zone */
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:44px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg)}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(108,71,255,.04)}
+.drop-icon{font-size:2.4rem;margin-bottom:10px}
+.drop-zone h2{font-size:1rem;font-weight:600;margin-bottom:6px}
+.drop-zone p{font-size:.82rem;color:var(--muted)}
+input[type=file]{display:none}
+
+/* Options */
+.options-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.field{flex:1;min-width:160px}
+.field label{display:block;font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.field select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font:inherit;font-size:.88rem;outline:none;cursor:pointer;transition:border-color .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.field select:focus{border-color:var(--accent)}
+
+/* Extract button */
+.extract-btn{padding:11px 24px;background:linear-gradient(135deg,#6c47ff,#a78bfa);color:#fff;border:none;border-radius:10px;font:inherit;font-size:.92rem;font-weight:600;cursor:pointer;transition:opacity .15s,transform .15s;white-space:nowrap}
+.extract-btn:hover:not(:disabled){opacity:.9;transform:translateY(-1px)}
+.extract-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* Preview + Result layout */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:600px){.two-col{grid-template-columns:1fr}}
+
+/* Image preview */
+.img-preview{width:100%;border-radius:10px;object-fit:contain;max-height:320px;background:#000;display:block}
+
+/* Progress */
+.progress-wrap{display:flex;flex-direction:column;gap:8px}
+.progress-bar-bg{height:8px;background:var(--border);border-radius:999px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#6c47ff,#a78bfa);border-radius:999px;width:0%;transition:width .3s ease}
+.progress-status{font-size:.82rem;color:var(--muted)}
+
+/* Result text */
+.result-box{width:100%;min-height:220px;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;font-size:.88rem;line-height:1.7;resize:vertical;outline:none;transition:border-color .15s}
+.result-box:focus{border-color:var(--accent)}
+
+/* Stats row */
+.stats-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.stat-pill{font-size:.72rem;padding:4px 10px;border-radius:999px;background:rgba(108,71,255,.1);color:var(--accent);font-weight:500}
+.stat-pill.good{background:rgba(74,140,140,.1);color:#4a8c8c}
+.stat-pill.warn{background:rgba(224,92,42,.1);color:#e05c2a}
+
+/* Action buttons */
+.actions-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:9px;font:inherit;font-size:.84rem;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none;border:none}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-success{background:#4a8c8c;color:#fff}
+.btn-success:hover{background:#3d7878}
+
+/* Camera */
+.camera-wrap{position:relative;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:4/3}
+.camera-wrap video{width:100%;height:100%;object-fit:cover}
+.camera-controls{display:flex;gap:8px;margin-top:10px}
+
+/* History */
+.history-list{display:flex;flex-direction:column;gap:8px}
+.history-item{padding:12px 14px;background:var(--bg);border-radius:9px;border:1px solid var(--border);cursor:pointer;transition:border-color .15s}
+.history-item:hover{border-color:var(--accent)}
+.history-item-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.history-item-name{font-size:.82rem;font-weight:600}
+.history-item-time{font-size:.72rem;color:var(--muted)}
+.history-item-preview{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Error */
+.error-box{background:rgba(220,53,69,.08);border:1px solid rgba(220,53,69,.2);border-radius:10px;padding:12px 16px;font-size:.84rem;color:#dc3545}
+
+/* Copy toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e1e1e;color:#fff;padding:10px 20px;border-radius:999px;font-size:.82rem;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+footer{text-align:center;padding:16px 0 40px;font-size:.75rem;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="../" class="back-btn">← Back to Hub</a>
+  <div class="header-brand">
+    <div class="header-icon">🔍</div>
+    <div><h1>Image to Text</h1><p>Extract text from any image instantly</p></div>
+  </div>
+  <button class="dark-toggle" id="darkToggle">🌙</button>
+</header>
+
+<main>
+
+  <!-- Upload -->
+  <div class="card">
+    <div class="card-label">1 — Upload Image</div>
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-icon">🖼️</div>
+      <h2>Drop your image here</h2>
+      <p>or click to browse · JPG, PNG, WEBP, BMP, TIFF supported</p>
+      <input type="file" id="fileInput" accept="image/*"/>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:.78rem;color:var(--muted)">or</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+    <button class="btn btn-outline" id="cameraBtn" style="margin-top:12px;width:100%;justify-content:center">📷 Use Camera</button>
+    <!-- Camera -->
+    <div class="hidden" id="cameraSection" style="margin-top:14px">
+      <div class="camera-wrap"><video id="cameraFeed" autoplay playsinline></video></div>
+      <div class="camera-controls">
+        <button class="btn btn-primary" id="captureBtn" style="flex:1;justify-content:center">📸 Capture</button>
+        <button class="btn btn-outline" id="closeCameraBtn">✕ Close</button>
+      </div>
+      <canvas id="captureCanvas" class="hidden"></canvas>
+    </div>
+  </div>
+
+  <!-- Options -->
+  <div class="card hidden" id="optionsCard">
+    <div class="card-label">2 — Options</div>
+    <div class="options-row">
+      <div class="field">
+        <label>Language</label>
+        <select id="language">
+          <option value="eng">English</option>
+          <option value="fra">French</option>
+          <option value="deu">German</option>
+          <option value="spa">Spanish</option>
+          <option value="por">Portuguese</option>
+          <option value="ita">Italian</option>
+          <option value="chi_sim">Chinese (Simplified)</option>
+          <option value="jpn">Japanese</option>
+          <option value="kor">Korean</option>
+          <option value="ara">Arabic</option>
+          <option value="rus">Russian</option>
+          <option value="hin">Hindi</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Output Mode</label>
+        <select id="outputMode">
+          <option value="text">Plain Text</option>
+          <option value="lines">Line by Line</option>
+          <option value="words">Words Only</option>
+        </select>
+      </div>
+      <button class="extract-btn" id="extractBtn">🔍 Extract Text</button>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box hidden" id="errorBox"></div>
+
+  <!-- Progress -->
+  <div class="card hidden" id="progressCard">
+    <div class="card-label">Extracting Text…</div>
+    <div class="progress-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+      <div class="progress-status" id="progressStatus">Initialising…</div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="hidden" id="resultSection">
+    <div class="two-col">
+      <!-- Image preview -->
+      <div class="card">
+        <div class="card-label">Image Preview</div>
+        <img id="imgPreview" class="img-preview" alt="Preview"/>
+        <div class="stats-row" id="statsRow"></div>
+      </div>
+      <!-- Extracted text -->
+      <div class="card">
+        <div class="card-label">Extracted Text</div>
+        <textarea class="result-box" id="resultText" placeholder="Extracted text will appear here…" spellcheck="false"></textarea>
+        <div class="actions-row">
+          <button class="btn btn-primary" id="copyBtn">📋 Copy</button>
+          <button class="btn btn-success" id="downloadTxtBtn">⬇️ TXT</button>
+          <button class="btn btn-outline" id="downloadDocBtn">⬇️ DOC</button>
+          <button class="btn btn-outline" id="clearBtn">🗑️ Clear</button>
+          <button class="btn btn-outline" id="newImageBtn">🔄 New Image</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="card hidden" id="historyCard">
+    <div class="card-label" style="display:flex;justify-content:space-between;align-items:center">
+      <span>Session History</span>
+      <button class="btn btn-outline" id="clearHistoryBtn" style="padding:4px 10px;font-size:.75rem">Clear</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+</main>
+
+<footer>Flow Image to Text · powered by Tesseract.js</footer>
+<div class="toast" id="toast">Copied to clipboard!</div>
+
+<script>
+// ── Dark mode ──
+const html = document.documentElement;
+const darkBtn = document.getElementById('darkToggle');
+const saved = localStorage.getItem('flow.darkMode');
+if(saved==='true'||(!saved&&window.matchMedia('(prefers-color-scheme:dark)').matches)){html.classList.add('dark');darkBtn.textContent='☀️'}
+darkBtn.addEventListener('click',()=>{const d=html.classList.toggle('dark');darkBtn.textContent=d?'☀️':'🌙';localStorage.setItem('flow.darkMode',d)});
+
+// ── Elements ──
+const dropZone     = document.getElementById('dropZone');
+const fileInput    = document.getElementById('fileInput');
+const optionsCard  = document.getElementById('optionsCard');
+const extractBtn   = document.getElementById('extractBtn');
+const progressCard = document.getElementById('progressCard');
+const progressFill = document.getElementById('progressFill');
+const progressStatus = document.getElementById('progressStatus');
+const resultSection= document.getElementById('resultSection');
+const imgPreview   = document.getElementById('imgPreview');
+const resultText   = document.getElementById('resultText');
+const statsRow     = document.getElementById('statsRow');
+const errorBox     = document.getElementById('errorBox');
+const historyCard  = document.getElementById('historyCard');
+const historyList  = document.getElementById('historyList');
+const toast        = document.getElementById('toast');
+
+let currentFile = null;
+let currentImageUrl = null;
+let sessionHistory = [];
+
+// ── Drag & Drop ──
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if(f && f.type.startsWith('image/')) loadImage(f);
+  else showError('Please drop a valid image file.');
+});
+fileInput.addEventListener('change', () => { if(fileInput.files[0]) loadImage(fileInput.files[0]); });
+
+function loadImage(file) {
+  currentFile = file;
+  currentImageUrl = URL.createObjectURL(file);
+  imgPreview.src = currentImageUrl;
+  optionsCard.classList.remove('hidden');
+  resultSection.classList.add('hidden');
+  hideError();
+}
+
+// ── Camera ──
+let cameraStream = null;
+document.getElementById('cameraBtn').addEventListener('click', async () => {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    document.getElementById('cameraFeed').srcObject = cameraStream;
+    document.getElementById('cameraSection').classList.remove('hidden');
+  } catch(e) { showError('Camera access denied or not available.'); }
+});
+document.getElementById('closeCameraBtn').addEventListener('click', stopCamera);
+document.getElementById('captureBtn').addEventListener('click', () => {
+  const video = document.getElementById('cameraFeed');
+  const canvas = document.getElementById('captureCanvas');
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  canvas.toBlob(blob => {
+    const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+    loadImage(file);
+    stopCamera();
+  }, 'image/jpeg', 0.95);
+});
+function stopCamera() {
+  if(cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  document.getElementById('cameraSection').classList.add('hidden');
+}
+
+// ── Extract ──
+extractBtn.addEventListener('click', async () => {
+  if(!currentImageUrl) return;
+  hideError();
+  extractBtn.disabled = true;
+  progressCard.classList.remove('hidden');
+  resultSection.classList.add('hidden');
+  progressFill.style.width = '0%';
+
+  const lang = document.getElementById('language').value;
+  const mode = document.getElementById('outputMode').value;
+
+  try {
+    const result = await Tesseract.recognize(currentImageUrl, lang, {
+      logger: m => {
+        if(m.status === 'recognizing text') {
+          const pct = Math.round(m.progress * 100);
+          progressFill.style.width = pct + '%';
+          progressStatus.textContent = `Extracting… ${pct}%`;
+        } else {
+          progressStatus.textContent = m.status.charAt(0).toUpperCase() + m.status.slice(1) + '…';
+        }
+      }
+    });
+
+    progressFill.style.width = '100%';
+    progressStatus.textContent = 'Done!';
+    await new Promise(r => setTimeout(r, 400));
+    progressCard.classList.add('hidden');
+
+    let text = result.data.text.trim();
+    const confidence = Math.round(result.data.confidence);
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    const charCount = text.length;
+
+    if(mode === 'lines') text = text.split('\n').filter(l => l.trim()).join('\n');
+    if(mode === 'words') text = text.split(/\s+/).filter(Boolean).join(' ');
+
+    resultText.value = text || '(No text detected in this image)';
+
+    // Stats
+    const confClass = confidence >= 80 ? 'good' : confidence >= 50 ? '' : 'warn';
+    statsRow.innerHTML = `
+      <span class="stat-pill ${confClass}">Confidence: ${confidence}%</span>
+      <span class="stat-pill">Words: ${wordCount}</span>
+      <span class="stat-pill">Chars: ${charCount}</span>
+      <span class="stat-pill">Lang: ${lang.toUpperCase()}</span>`;
+
+    resultSection.classList.remove('hidden');
+    addHistory(currentFile?.name || 'camera-capture.jpg', text, confidence);
+
+  } catch(err) {
+    progressCard.classList.add('hidden');
+    showError('Failed to extract text. Please try a clearer image.');
+  } finally {
+    extractBtn.disabled = false;
+  }
+});
+
+// ── Actions ──
+document.getElementById('copyBtn').addEventListener('click', () => {
+  navigator.clipboard.writeText(resultText.value).then(() => showToast('Copied to clipboard!'));
+});
+
+document.getElementById('downloadTxtBtn').addEventListener('click', () => {
+  const blob = new Blob([resultText.value], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `extracted_${Date.now()}.txt`; a.click();
+});
+
+document.getElementById('downloadDocBtn').addEventListener('click', () => {
+  const content = `<html><body><pre style="font-family:Arial;font-size:14px;white-space:pre-wrap">${resultText.value}</pre></body></html>`;
+  const blob = new Blob([content], { type: 'application/msword' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `extracted_${Date.now()}.doc`; a.click();
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => { resultText.value = ''; });
+
+document.getElementById('newImageBtn').addEventListener('click', () => {
+  currentFile = null; currentImageUrl = null; fileInput.value = '';
+  optionsCard.classList.add('hidden');
+  resultSection.classList.add('hidden');
+  progressCard.classList.add('hidden');
+  hideError();
+});
+
+// ── History ──
+function addHistory(name, text, confidence) {
+  sessionHistory.unshift({ name, text, confidence, time: new Date().toLocaleTimeString() });
+  if(sessionHistory.length > 10) sessionHistory.pop();
+  renderHistory();
+}
+function renderHistory() {
+  if(!sessionHistory.length) { historyCard.classList.add('hidden'); return; }
+  historyCard.classList.remove('hidden');
+  historyList.innerHTML = sessionHistory.map((h, i) => `
+    <div class="history-item" onclick="loadHistory(${i})">
+      <div class="history-item-top">
+        <span class="history-item-name">🖼️ ${h.name}</span>
+        <span class="history-item-time">${h.time} · ${h.confidence}% confidence</span>
+      </div>
+      <div class="history-item-preview">${h.text.slice(0, 80)}${h.text.length > 80 ? '…' : ''}</div>
+    </div>`).join('');
+}
+window.loadHistory = i => {
+  resultText.value = sessionHistory[i].text;
+  resultSection.classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+document.getElementById('clearHistoryBtn').addEventListener('click', () => { sessionHistory = []; renderHistory(); });
+
+// ── Helpers ──
+function showError(msg) { errorBox.textContent = '⚠️ ' + msg; errorBox.classList.remove('hidden'); }
+function hideError() { errorBox.classList.add('hidden'); }
+function showToast(msg) {
+  toast.textContent = msg; toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2000);
+}
+</script>
+</body>
+</html>
