@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Charter&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -421,46 +420,105 @@ body {
   box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 
-/* PDF print-friendly styling — applied during export */
-.pdf-render {
-  font-family: 'Charter', Georgia, serif;
-  font-size: 16px;
-  line-height: 1.7;
-  color: #1a1a1a;
-  background: #fff;
-}
-.pdf-render h1 { font-size: 2em; font-weight: 700; margin: 0 0 0.6em; }
-.pdf-render h2 { font-size: 1.5em; font-weight: 600; margin: 1em 0 0.4em; }
-.pdf-render p  { margin-bottom: 0.7em; }
-.pdf-render ul, .pdf-render ol { margin: 0.5em 0 0.7em 1.5em; }
-.pdf-render img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 0.6em 0;
-  page-break-inside: avoid;
-  break-inside: avoid;
-}
-.pdf-render blockquote {
-  border-left: 3px solid #d4d4d9;
-  padding-left: 1em;
-  color: #6b6b73;
-  margin: 0.7em 0;
-}
-.pdf-render a { color: #2563eb; text-decoration: underline; }
-.pdf-render .doc-title {
-  font-family: 'Inter', sans-serif;
-  font-size: 1.6em;
-  font-weight: 700;
-  margin-bottom: 1em;
-  border-bottom: 1px solid #e6e6e9;
-  padding-bottom: 0.5em;
-}
+/* PDF print-friendly styling — see @media print block below */
 
 @media (max-width: 600px) {
   #home-view { padding: 2rem 1rem; }
   .home-header h1 { font-size: 1.5rem; }
   .paper { padding: 0.75in 0.5in; min-height: auto; }
+}
+
+/* ─── PRINT / SAVE-AS-PDF ─────────────────────────────────
+   When the user prints (or chooses "Save as PDF" from the print dialog),
+   we hide the entire app UI and render only the document content.
+   The browser's native print engine handles fonts, images, page breaks,
+   and PDF generation — way more reliable than html2canvas/html2pdf.       */
+@media print {
+  /* Reset page chrome — let the document fill the printable area */
+  @page {
+    margin: 0.75in;
+  }
+  html, body {
+    background: #fff !important;
+    height: auto;
+  }
+  body {
+    font-family: 'Charter', Georgia, 'Times New Roman', serif;
+    color: #000;
+  }
+
+  /* Hide everything in the app — home, topbar, toolbar, modal, footer, toast */
+  #home-view,
+  .topbar,
+  .toolbar,
+  .editor-footer,
+  .modal-backdrop,
+  #toast {
+    display: none !important;
+  }
+
+  /* Strip the editor-view container's scroll/background so it doesn't fight
+     the printed page */
+  #editor-view {
+    display: block !important;
+    height: auto !important;
+    background: #fff !important;
+  }
+  .canvas {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  .paper {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Render the document title above the content */
+  .paper::before {
+    content: attr(data-print-title);
+    display: block;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.6em;
+    font-weight: 700;
+    margin-bottom: 1em;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 0.5em;
+    color: #000;
+  }
+  .paper[data-print-title=""]::before { display: none; }
+
+  /* Make sure the editor itself is fully visible, not constrained */
+  #editor {
+    min-height: 0 !important;
+    outline: none !important;
+    color: #000;
+    font-size: 12pt;
+    line-height: 1.6;
+  }
+  #editor img {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  #editor h1, #editor h2, #editor h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  #editor img.selected {
+    outline: none !important;
+  }
+  /* Force background colors / text colors to print (especially for blockquote borders) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
 </style>
 </head>
@@ -500,7 +558,7 @@ body {
       <span id="save-status">Saved</span>
     </div>
     <div class="topbar-right">
-      <button class="btn" id="download-pdf-btn">⬇️ Download PDF</button>
+      <button class="btn" id="download-pdf-btn">⬇️ Save as PDF</button>
     </div>
   </div>
 
@@ -528,7 +586,7 @@ body {
 
   <!-- Paper -->
   <div class="canvas">
-    <div class="paper">
+    <div class="paper" data-print-title="">
       <div id="editor" contenteditable="true" data-placeholder="Start writing…"></div>
     </div>
   </div>
@@ -543,22 +601,16 @@ body {
 <!-- ─── PDF EXPORT MODAL ──────────────────────────────── -->
 <div id="pdf-modal" class="modal-backdrop hidden">
   <div class="modal">
-    <h3>Download as PDF</h3>
-    <p>Choose a page size for your document.</p>
-    <label for="pdf-page-size">Page size</label>
-    <select id="pdf-page-size">
-      <option value="letter">US Letter (8.5 × 11 in)</option>
-      <option value="a4">A4 (210 × 297 mm)</option>
-      <option value="legal">US Legal (8.5 × 14 in)</option>
-    </select>
-    <label for="pdf-orientation">Orientation</label>
-    <select id="pdf-orientation">
-      <option value="portrait">Portrait</option>
-      <option value="landscape">Landscape</option>
-    </select>
+    <h3>Save as PDF</h3>
+    <p>When the print dialog opens:</p>
+    <ol style="margin: 0 0 1.25rem 1.25rem; color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">
+      <li>Set <strong>Destination</strong> to <strong>Save as PDF</strong></li>
+      <li>Pick your page size and orientation</li>
+      <li>Click <strong>Save</strong></li>
+    </ol>
     <div class="modal-actions">
       <button class="btn" id="pdf-cancel-btn">Cancel</button>
-      <button class="btn btn-primary" id="pdf-download-confirm-btn">Download</button>
+      <button class="btn btn-primary" id="pdf-download-confirm-btn">Open print dialog</button>
     </div>
   </div>
 </div>
@@ -886,8 +938,16 @@ document.getElementById('back-home-btn').addEventListener('click', () => {
   showHome();
 });
 
-// ─── PDF Export ──────────────────────────────────────────
+// ─── PDF Export (via native browser print → "Save as PDF") ─────────
+// Why this approach: html2pdf.js / html2canvas were producing blank PDFs
+// because they had trouble with embedded base64 images that overflowed the
+// page width. The browser's native print engine handles fonts, images,
+// page breaks, and PDF generation perfectly — it's the same engine the
+// browser itself uses for rendering, so anything that displays correctly
+// in the editor will export correctly.
 const pdfModal = document.getElementById('pdf-modal');
+const paperEl = document.querySelector('.paper');
+
 document.getElementById('download-pdf-btn').addEventListener('click', () => {
   pdfModal.classList.remove('hidden');
 });
@@ -899,102 +959,45 @@ pdfModal.addEventListener('click', e => {
 });
 
 document.getElementById('pdf-download-confirm-btn').addEventListener('click', () => {
-  const pageSize = document.getElementById('pdf-page-size').value;
-  const orientation = document.getElementById('pdf-orientation').value;
-  const title = (titleInput.value || 'Untitled').trim();
-
   pdfModal.classList.add('hidden');
 
-  // Full-screen loading overlay (covers the render element while html2canvas captures it)
-  const overlay = document.createElement('div');
-  overlay.style.cssText = `
-    position: fixed; inset: 0;
-    background: rgba(255, 255, 255, 0.96);
-    z-index: 99999;
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 1rem;
-    font: 600 1rem 'Inter', sans-serif; color: #1a1a1a;
-  `;
-  overlay.innerHTML = `
-    <div style="font-size:2rem">📄</div>
-    <div>Generating PDF…</div>
-    <div style="font-size:0.8rem;color:#6b6b73;font-weight:400">This may take a few seconds for documents with images</div>
-  `;
-  document.body.appendChild(overlay);
+  // Make sure latest title/content is saved so we're printing the live state
+  persistCurrent();
 
-  // Build the print-friendly render tree.
-  // IMPORTANT: html2canvas captures based on the live DOM. The element must be
-  // (a) in the document, (b) actually laid out with non-zero dimensions, and
-  // (c) NOT positioned off-screen via `left:-9999px` (html2canvas can't capture that).
-  // We position it at top-left of the page, visible, but covered by the overlay.
-  const renderRoot = document.createElement('div');
-  renderRoot.className = 'pdf-render';
-  const widthValue = pageSize === 'a4' ? '210mm' :
-                     pageSize === 'legal' ? '8.5in' : '8.5in';
-  renderRoot.style.cssText = `
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: ${widthValue};
-    padding: 0.75in;
-    background: #ffffff;
-    color: #1a1a1a;
-    z-index: 1;
-    box-sizing: border-box;
-    overflow: hidden;
-  `;
-  renderRoot.innerHTML = `
-    <div class="doc-title">${escapeHtml(title)}</div>
-    ${editor.innerHTML}
-  `;
-  document.body.appendChild(renderRoot);
+  const title = (titleInput.value || 'Untitled').trim();
 
-  const filename = (title || 'document').replace(/[^\w\s.-]+/g, '_').replace(/\s+/g, '_') + '.pdf';
+  // The browser uses document.title as the default filename when "Save as PDF"
+  // is selected. Temporarily switch it to the doc title, then restore.
+  const originalDocTitle = document.title;
+  document.title = title || 'document';
 
-  // Wait for any images inside the render tree to finish loading before capturing.
-  // Data-URL images load synchronously but we still defer one tick to let layout settle.
-  const imgs = Array.from(renderRoot.querySelectorAll('img'));
-  const imgPromises = imgs.map(img => {
-    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-    return new Promise(resolve => {
-      img.onload = img.onerror = () => resolve();
-    });
-  });
+  // The print stylesheet renders the paper element, including a CSS-generated
+  // title via ::before pulled from data-print-title. Set that attribute now.
+  if (paperEl) paperEl.setAttribute('data-print-title', title);
 
-  const cleanup = () => {
-    if (renderRoot.parentNode) renderRoot.parentNode.removeChild(renderRoot);
-    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-  };
+  // Give the browser a tick to apply the title change, then open print dialog.
+  // Some browsers (esp. Safari) won't pick up document.title changes if you
+  // call print() synchronously.
+  setTimeout(() => {
+    window.print();
+    // Restore document.title after the dialog is dismissed.
+    // The 'afterprint' event fires whether the user saved or cancelled.
+    const restore = () => {
+      document.title = originalDocTitle;
+      window.removeEventListener('afterprint', restore);
+    };
+    window.addEventListener('afterprint', restore);
+    // Fallback: also restore after 1s in case afterprint doesn't fire
+    setTimeout(restore, 1000);
+  }, 50);
+});
 
-  Promise.all(imgPromises)
-    .then(() => new Promise(r => setTimeout(r, 50))) // let layout settle
-    .then(() => html2pdf()
-      .set({
-        margin: [0.5, 0.5, 0.5, 0.5],
-        filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          logging: false
-        },
-        jsPDF: { unit: 'in', format: pageSize, orientation },
-        pagebreak: { mode: ['css', 'legacy'] }
-      })
-      .from(renderRoot)
-      .save()
-    )
-    .then(() => {
-      cleanup();
-      showToast('✅ PDF downloaded');
-    })
-    .catch(err => {
-      cleanup();
-      console.error('PDF export error:', err);
-      showToast('❌ PDF export failed: ' + (err.message || 'Unknown error'), 4000);
-    });
+// Keyboard shortcut: Ctrl/Cmd+P opens our modal first (instead of native print)
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p' && !editorView.classList.contains('hidden')) {
+    e.preventDefault();
+    document.getElementById('download-pdf-btn').click();
+  }
 });
 
 // ─── Boot ────────────────────────────────────────────────
