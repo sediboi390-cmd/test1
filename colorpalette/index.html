@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Color Palette Generator — Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f7f6f3;--surface:#fff;--border:#e5e2da;--accent:#7c3aed;--accent-hover:#6d28d9;--text:#1e1e1e;--muted:#888580;--radius:14px;--shadow:0 2px 12px rgba(0,0,0,.06)}
+html.dark{--bg:#111113;--surface:#1c1c1f;--border:#2a2a2e;--text:#ececef;--muted:#7a7a82}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.hidden{display:none!important}
+header{max-width:960px;margin:0 auto;padding:40px 24px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--muted);text-decoration:none;padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);transition:all .15s}
+.back-btn:hover{color:var(--accent);border-color:var(--accent)}
+.header-brand{display:flex;align-items:center;gap:10px}
+.header-icon{width:40px;height:40px;background:linear-gradient(135deg,#7c3aed,#a78bfa);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.header-brand h1{font-size:1.3rem;font-weight:700;letter-spacing:-.02em}
+.header-brand p{font-size:.78rem;color:var(--muted)}
+.dark-toggle{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.dark-toggle:hover{border-color:var(--accent);color:var(--accent)}
+main{max-width:960px;margin:28px auto 80px;padding:0 24px;display:flex;flex-direction:column;gap:18px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+.card-label{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font:inherit;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none;border:none}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:5px 12px;font-size:.78rem}
+footer{text-align:center;padding:16px 0 40px;font-size:.75rem;color:var(--muted)}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e1e1e;color:#fff;padding:10px 20px;border-radius:999px;font-size:.82rem;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.controls-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.control-group{display:flex;flex-direction:column;gap:6px}
+.control-group label{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.color-input-wrap{display:flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--border);border-radius:9px;background:var(--bg);cursor:pointer;transition:border-color .15s}
+.color-input-wrap:hover{border-color:var(--accent)}
+.color-input-wrap input[type=color]{width:32px;height:32px;border:none;background:none;cursor:pointer;padding:0;border-radius:6px}
+.color-input-wrap span{font-size:.86rem;font-weight:600;min-width:70px}
+select{padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font:inherit;font-size:.86rem;outline:none;cursor:pointer;transition:border-color .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+select:focus{border-color:var(--accent)}
+.palette-strip{display:flex;border-radius:12px;overflow:hidden;height:120px;margin-bottom:14px;box-shadow:var(--shadow)}
+.palette-swatch{flex:1;position:relative;cursor:pointer;transition:flex .2s}
+.palette-swatch:hover{flex:2}
+.palette-swatch .swatch-info{position:absolute;bottom:0;left:0;right:0;padding:8px;background:rgba(0,0,0,.35);color:#fff;font-size:.7rem;font-weight:600;text-align:center;opacity:0;transition:opacity .2s;backdrop-filter:blur(4px)}
+.palette-swatch:hover .swatch-info{opacity:1}
+.colors-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.color-card{border-radius:12px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s}
+.color-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.color-swatch{height:100px;position:relative}
+.color-swatch .lock-btn{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:6px;border:none;background:rgba(255,255,255,.25);color:#fff;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);transition:background .15s}
+.color-swatch .lock-btn:hover{background:rgba(255,255,255,.4)}
+.color-swatch .lock-btn.locked{background:rgba(255,255,255,.5);color:#333}
+.color-info{padding:10px 12px;background:var(--surface)}
+.color-hex{font-size:.88rem;font-weight:700;letter-spacing:.04em;margin-bottom:4px}
+.color-values{font-size:.7rem;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.color-actions{display:flex;gap:4px;margin-top:8px}
+.color-actions button{flex:1;padding:5px 0;border:1px solid var(--border);border-radius:6px;background:transparent;font:inherit;font-size:.7rem;font-weight:500;cursor:pointer;color:var(--muted);transition:all .15s}
+.color-actions button:hover{border-color:var(--accent);color:var(--accent)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tab-btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--muted);font:inherit;font-size:.8rem;font-weight:500;cursor:pointer;transition:all .15s}
+.tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.harmony-info{font-size:.82rem;color:var(--muted);padding:10px 14px;background:var(--bg);border-radius:9px;border:1px solid var(--border);margin-bottom:14px}
+.gradient-preview{height:80px;border-radius:10px;margin-bottom:12px;transition:all .3s}
+.saved-palette-item{padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.saved-palette-item:hover{border-color:var(--accent)}
+.saved-swatch{height:20px;flex:1;border-radius:4px}
+.saved-palette-meta{display:flex;justify-content:space-between;align-items:center}
+.saved-palette-name{font-size:.82rem;font-weight:600}
+.saved-palette-time{font-size:.7rem;color:var(--muted)}
+.contrast-result{padding:14px;border-radius:10px;margin-top:12px;text-align:center}
+.contrast-score{font-size:2rem;font-weight:700;margin-bottom:4px}
+.contrast-badge{padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:600;display:inline-block;margin:2px}
+.badge-pass{background:#dcfce7;color:#166534}
+.badge-fail{background:#fee2e2;color:#991b1b}
+</style>
+</head>
+<body>
+<header>
+  <a href="../" class="back-btn">← Back to Hub</a>
+  <div class="header-brand">
+    <div class="header-icon">🎨</div>
+    <div><h1>Color Palette Generator</h1><p>Generate beautiful color palettes instantly</p></div>
+  </div>
+  <button class="dark-toggle" id="darkToggle">🌙</button>
+</header>
+<main>
+  <!-- Generator -->
+  <div class="card">
+    <div class="card-label">Generate Palette</div>
+    <div class="controls-row">
+      <div class="control-group">
+        <label>Base Color</label>
+        <div class="color-input-wrap" onclick="document.getElementById('baseColorInput').click()">
+          <input type="color" id="baseColorInput" value="#7c3aed" oninput="onBaseColorChange(this.value)"/>
+          <span id="baseColorHex">#7c3aed</span>
+        </div>
+      </div>
+      <div class="control-group">
+        <label>Harmony</label>
+        <select id="harmonySelect" onchange="generatePalette()">
+          <option value="analogous">🌈 Analogous</option>
+          <option value="complementary">⚡ Complementary</option>
+          <option value="triadic">🔺 Triadic</option>
+          <option value="tetradic">◆ Tetradic</option>
+          <option value="split">✂️ Split Complementary</option>
+          <option value="monochromatic">🎭 Monochromatic</option>
+          <option value="shades">🌓 Shades &amp; Tints</option>
+          <option value="random">🎲 Random</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Count</label>
+        <select id="countSelect" onchange="generatePalette()">
+          <option value="4">4 colors</option>
+          <option value="5" selected>5 colors</option>
+          <option value="6">6 colors</option>
+          <option value="8">8 colors</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="generatePalette()">🎲 Generate</button>
+      <button class="btn btn-outline" onclick="savePalette()">💾 Save</button>
+      <button class="btn btn-outline" onclick="copyAllHex()">📋 Copy All</button>
+    </div>
+  </div>
+
+  <!-- Palette Display -->
+  <div class="card" id="paletteCard">
+    <div class="card-label" style="display:flex;justify-content:space-between;align-items:center">
+      <span>Your Palette</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="exportCSS()">⬇️ CSS</button>
+        <button class="btn btn-outline btn-sm" onclick="exportJSON()">⬇️ JSON</button>
+      </div>
+    </div>
+    <div class="palette-strip" id="paletteStrip"></div>
+    <div class="harmony-info" id="harmonyInfo"></div>
+    <div class="colors-grid" id="colorsGrid"></div>
+  </div>
+
+  <!-- Tools -->
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('gradient',this)">🌈 Gradient</button>
+      <button class="tab-btn" onclick="switchTab('contrast',this)">⚖️ Contrast Checker</button>
+      <button class="tab-btn" onclick="switchTab('mixer',this)">🎨 Color Mixer</button>
+    </div>
+    <!-- Gradient -->
+    <div id="tab-gradient">
+      <div class="gradient-preview" id="gradientPreview"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div class="control-group">
+          <label>Type</label>
+          <select id="gradientType" onchange="updateGradient()">
+            <option value="linear">Linear</option>
+            <option value="radial">Radial</option>
+            <option value="conic">Conic</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Direction</label>
+          <select id="gradientDir" onchange="updateGradient()">
+            <option value="to right">→ Left to Right</option>
+            <option value="to left">← Right to Left</option>
+            <option value="to bottom">↓ Top to Bottom</option>
+            <option value="to top">↑ Bottom to Top</option>
+            <option value="to bottom right">↘ Diagonal</option>
+            <option value="135deg">↙ Diagonal 2</option>
+          </select>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="copyGradientCSS()">📋 Copy CSS</button>
+      </div>
+      <div id="gradientCSS" style="margin-top:10px;padding:10px 14px;background:var(--bg);border-radius:9px;border:1px solid var(--border);font-size:.78rem;font-family:monospace;color:var(--muted);word-break:break-all"></div>
+    </div>
+    <!-- Contrast -->
+    <div id="tab-contrast" class="hidden">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px">
+        <div class="control-group">
+          <label>Foreground</label>
+          <div class="color-input-wrap" onclick="document.getElementById('fgColor').click()">
+            <input type="color" id="fgColor" value="#1e1e1e" oninput="document.getElementById('fgHex').textContent=this.value;checkContrast()"/>
+            <span id="fgHex">#1e1e1e</span>
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Background</label>
+          <div class="color-input-wrap" onclick="document.getElementById('bgColor').click()">
+            <input type="color" id="bgColor" value="#ffffff" oninput="document.getElementById('bgHex').textContent=this.value;checkContrast()"/>
+            <span id="bgHex">#ffffff</span>
+          </div>
+        </div>
+      </div>
+      <div id="contrastPreview" style="padding:20px;border-radius:10px;text-align:center;font-size:1.1rem;font-weight:600;margin-bottom:10px"></div>
+      <div id="contrastResult"></div>
+    </div>
+    <!-- Mixer -->
+    <div id="tab-mixer" class="hidden">
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+        <div class="control-group">
+          <label>Color A</label>
+          <div class="color-input-wrap" onclick="document.getElementById('mixColorA').click()">
+            <input type="color" id="mixColorA" value="#7c3aed" oninput="document.getElementById('mixAHex').textContent=this.value;mixColors()"/>
+            <span id="mixAHex">#7c3aed</span>
+          </div>
+        </div>
+        <div style="font-size:1.4rem;padding-bottom:8px">+</div>
+        <div class="control-group">
+          <label>Color B</label>
+          <div class="color-input-wrap" onclick="document.getElementById('mixColorB').click()">
+            <input type="color" id="mixColorB" value="#e05c2a" oninput="document.getElementById('mixBHex').textContent=this.value;mixColors()"/>
+            <span id="mixBHex">#e05c2a</span>
+          </div>
+        </div>
+        <div style="font-size:1.4rem;padding-bottom:8px">=</div>
+        <div class="control-group">
+          <label>Result</label>
+          <div class="color-input-wrap" style="cursor:default">
+            <div id="mixSwatch" style="width:32px;height:32px;border-radius:6px"></div>
+            <span id="mixHex">#b24e8b</span>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="copyMixResult()">📋 Copy</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Mix Ratio</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:.78rem;color:var(--muted)" id="ratioA">50%</span>
+          <input type="range" id="mixRatio" min="0" max="100" value="50" style="flex:1;accent-color:var(--accent)" oninput="mixColors()"/>
+          <span style="font-size:.78rem;color:var(--muted)" id="ratioB">50%</span>
+        </div>
+      </div>
+      <div id="mixSteps" style="display:flex;gap:6px;margin-top:14px;border-radius:10px;overflow:hidden;height:50px"></div>
+    </div>
+  </div>
+
+  <!-- Saved -->
+  <div class="card hidden" id="savedCard">
+    <div class="card-label" style="display:flex;justify-content:space-between;align-items:center">
+      <span>💾 Saved Palettes</span>
+      <button class="btn btn-outline btn-sm" onclick="clearSaved()">Clear All</button>
+    </div>
+    <div id="savedList"></div>
+  </div>
+</main>
+<footer>Flow Color Palette Generator</footer>
+<div class="toast" id="toast"></div>
+
+
+<script>
+// ── Dark mode ──
+const html=document.documentElement,darkBtn=document.getElementById('darkToggle');
+const sv=localStorage.getItem('flow.darkMode');
+if(sv==='true'||(!sv&&window.matchMedia('(prefers-color-scheme:dark)').matches)){html.classList.add('dark');darkBtn.textContent='☀️'}
+darkBtn.addEventListener('click',()=>{const d=html.classList.toggle('dark');darkBtn.textContent=d?'☀️':'🌙';localStorage.setItem('flow.darkMode',d)});
+
+// ── Color Math ──
+function hexToHsl(hex){
+  let r=parseInt(hex.slice(1,3),16)/255,g=parseInt(hex.slice(3,5),16)/255,b=parseInt(hex.slice(5,7),16)/255;
+  const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,l=(max+min)/2;
+  if(max===min){h=s=0}else{const d=max-min;s=l>.5?d/(2-max-min):d/(max+min);
+    switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break}h/=6}
+  return[Math.round(h*360),Math.round(s*100),Math.round(l*100)];
+}
+function hslToHex(h,s,l){
+  s/=100;l/=100;const a=s*Math.min(l,1-l);
+  const f=n=>{const k=(n+h/30)%12;const color=l-a*Math.max(Math.min(k-3,9-k,1),-1);
+    return Math.round(255*color).toString(16).padStart(2,'0')};
+  return`#${f(0)}${f(8)}${f(4)}`;
+}
+function hexToRgb(hex){return{r:parseInt(hex.slice(1,3),16),g:parseInt(hex.slice(3,5),16),b:parseInt(hex.slice(5,7),16)}}
+function rgbToHex(r,g,b){return'#'+[r,g,b].map(x=>Math.round(Math.max(0,Math.min(255,x))).toString(16).padStart(2,'0')).join('')}
+function hexToHslStr(hex){const[h,s,l]=hexToHsl(hex);return`hsl(${h}, ${s}%, ${l}%)`}
+function hexToRgbStr(hex){const{r,g,b}=hexToRgb(hex);return`rgb(${r}, ${g}, ${b})`}
+function luminance(hex){
+  const{r,g,b}=hexToRgb(hex);
+  const sRGB=[r,g,b].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});
+  return .2126*sRGB[0]+.7152*sRGB[1]+.0722*sRGB[2];
+}
+function contrastRatio(hex1,hex2){
+  const l1=luminance(hex1),l2=luminance(hex2);
+  return(Math.max(l1,l2)+.05)/(Math.min(l1,l2)+.05);
+}
+function getTextColor(hex){const[,,l]=hexToHsl(hex);return l>55?'#1a1a1a':'#ffffff'}
+
+// ── State ──
+let currentColors=[];
+let lockedColors={};
+let savedPalettes=JSON.parse(localStorage.getItem('flow.palettes')||'[]');
+
+// ── Harmony Descriptions ──
+const harmonyDesc={
+  analogous:'Colors adjacent on the color wheel — harmonious and natural looking.',
+  complementary:'Colors opposite on the color wheel — high contrast and vibrant.',
+  triadic:'Three evenly spaced colors — vibrant yet balanced.',
+  tetradic:'Four colors forming a rectangle on the color wheel — rich and complex.',
+  split:'A color and two adjacent to its complement — softer than complementary.',
+  monochromatic:'Variations in saturation and lightness of a single hue — elegant and cohesive.',
+  shades:'Shades, tints and tones of a single color — great for UI design.',
+  random:'Randomly generated colors — great for inspiration!'
+};
+
+// ── Generate ──
+function generatePalette(){
+  const baseHex=document.getElementById('baseColorInput').value;
+  const harmony=document.getElementById('harmonySelect').value;
+  const count=parseInt(document.getElementById('countSelect').value);
+  const[h,s,l]=hexToHsl(baseHex);
+  let colors=[];
+
+  const gen=(hue,sat,lit)=>hslToHex(((hue%360)+360)%360,Math.max(10,Math.min(90,sat)),Math.max(10,Math.min(90,lit)));
+
+  switch(harmony){
+    case 'analogous':
+      for(let i=0;i<count;i++)colors.push(gen(h+(i-Math.floor(count/2))*30,s,l));break;
+    case 'complementary':
+      colors=[baseHex];
+      for(let i=1;i<count;i++)colors.push(i%2===0?gen(h+i*15,s,l):gen(h+180+i*10,s,l));break;
+    case 'triadic':
+      colors=[baseHex,gen(h+120,s,l),gen(h+240,s,l)];
+      while(colors.length<count)colors.push(gen(h+colors.length*20,s,Math.max(30,l-10)));break;
+    case 'tetradic':
+      colors=[baseHex,gen(h+90,s,l),gen(h+180,s,l),gen(h+270,s,l)];
+      while(colors.length<count)colors.push(gen(h+colors.length*15,s,l));break;
+    case 'split':
+      colors=[baseHex,gen(h+150,s,l),gen(h+210,s,l)];
+      while(colors.length<count)colors.push(gen(h+colors.length*25,s,l));break;
+    case 'monochromatic':
+      for(let i=0;i<count;i++)colors.push(gen(h,Math.max(20,s-(i*10)),Math.max(20,Math.min(85,l+(i-Math.floor(count/2))*15))));break;
+    case 'shades':
+      for(let i=0;i<count;i++)colors.push(gen(h,Math.max(5,s-i*5),Math.round(10+i*(80/(count-1)))));break;
+    case 'random':
+      for(let i=0;i<count;i++)colors.push(hslToHex(Math.random()*360,30+Math.random()*60,35+Math.random()*40));break;
+  }
+
+  // Apply locked colors
+  currentColors=colors.map((c,i)=>lockedColors[i]||c);
+  renderPalette();
+  updateGradient();
+}
+
+function onBaseColorChange(val){
+  document.getElementById('baseColorHex').textContent=val;
+  generatePalette();
+}
+
+// ── Render ──
+function renderPalette(){
+  const strip=document.getElementById('paletteStrip');
+  const grid=document.getElementById('colorsGrid');
+  const harmony=document.getElementById('harmonySelect').value;
+
+  strip.innerHTML=currentColors.map((c,i)=>`
+    <div class="palette-swatch" style="background:${c}" onclick="copyHex('${c}')">
+      <div class="swatch-info">${c}</div>
+    </div>`).join('');
+
+  grid.innerHTML=currentColors.map((c,i)=>{
+    const tc=getTextColor(c);
+    const[h,s,l]=hexToHsl(c);
+    const{r,g,b}=hexToRgb(c);
+    const locked=!!lockedColors[i];
+    return`<div class="color-card">
+      <div class="color-swatch" style="background:${c}">
+        <button class="lock-btn ${locked?'locked':''}" onclick="toggleLock(${i})" title="${locked?'Unlock':'Lock'} color">${locked?'🔒':'🔓'}</button>
+      </div>
+      <div class="color-info">
+        <div class="color-hex" style="color:${c}">${c.toUpperCase()}</div>
+        <div class="color-values">
+          <span>RGB: ${r}, ${g}, ${b}</span>
+          <span>HSL: ${h}°, ${s}%, ${l}%</span>
+        </div>
+        <div class="color-actions">
+          <button onclick="copyHex('${c}')">HEX</button>
+          <button onclick="copyText('${hexToRgbStr(c)}')">RGB</button>
+          <button onclick="copyText('${hexToHslStr(c)}')">HSL</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('harmonyInfo').textContent=harmonyDesc[harmony]||'';
+}
+
+function toggleLock(i){
+  if(lockedColors[i])delete lockedColors[i];
+  else lockedColors[i]=currentColors[i];
+  renderPalette();
+}
+
+// ── Copy helpers ──
+function copyHex(hex){navigator.clipboard.writeText(hex).then(()=>showToast(`Copied ${hex}! 📋`))}
+function copyText(txt){navigator.clipboard.writeText(txt).then(()=>showToast(`Copied! 📋`))}
+function copyAllHex(){
+  if(!currentColors.length){showToast('Generate a palette first!');return}
+  navigator.clipboard.writeText(currentColors.join(', ')).then(()=>showToast('All HEX codes copied! 📋'));
+}
+
+// ── Export ──
+function exportCSS(){
+  if(!currentColors.length)return;
+  let css=`:root {\n${currentColors.map((c,i)=>`  --color-${i+1}: ${c};`).join('\n')}\n}`;
+  const blob=new Blob([css],{type:'text/css'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='palette.css';a.click();
+  showToast('CSS exported! ⬇️');
+}
+function exportJSON(){
+  if(!currentColors.length)return;
+  const data=currentColors.map((c,i)=>{const{r,g,b}=hexToRgb(c);const[h,s,l]=hexToHsl(c);return{id:i+1,hex:c,rgb:{r,g,b},hsl:{h,s,l}}});
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='palette.json';a.click();
+  showToast('JSON exported! ⬇️');
+}
+
+// ── Gradient ──
+function updateGradient(){
+  if(!currentColors.length)return;
+  const type=document.getElementById('gradientType').value;
+  const dir=document.getElementById('gradientDir').value;
+  const stops=currentColors.join(', ');
+  let css;
+  if(type==='radial')css=`radial-gradient(circle, ${stops})`;
+  else if(type==='conic')css=`conic-gradient(${stops})`;
+  else css=`linear-gradient(${dir}, ${stops})`;
+  document.getElementById('gradientPreview').style.background=css;
+  document.getElementById('gradientCSS').textContent=`background: ${css};`;
+}
+function copyGradientCSS(){
+  const css=document.getElementById('gradientCSS').textContent;
+  if(!css)return;
+  navigator.clipboard.writeText(css).then(()=>showToast('Gradient CSS copied! 📋'));
+}
+
+// ── Contrast Checker ──
+function checkContrast(){
+  const fg=document.getElementById('fgColor').value;
+  const bg=document.getElementById('bgColor').value;
+  const ratio=contrastRatio(fg,bg);
+  const ratioStr=ratio.toFixed(2);
+  const wcagAA=ratio>=4.5,wcagAAA=ratio>=7,wcagAALarge=ratio>=3;
+
+  document.getElementById('contrastPreview').style.cssText=`background:${bg};color:${fg};padding:20px;border-radius:10px;text-align:center;font-size:1.1rem;font-weight:600;margin-bottom:10px`;
+  document.getElementById('contrastPreview').textContent='Sample Text Preview';
+
+  const color=ratio>=7?'#166534':ratio>=4.5?'#854d0e':'#991b1b';
+  const bg2=ratio>=7?'#dcfce7':ratio>=4.5?'#fef9c3':'#fee2e2';
+  document.getElementById('contrastResult').innerHTML=`
+    <div style="text-align:center;padding:14px;background:${bg2};border-radius:10px">
+      <div style="font-size:2rem;font-weight:700;color:${color}">${ratioStr}:1</div>
+      <div style="font-size:.82rem;font-weight:500;color:${color};margin-bottom:8px">${ratio>=7?'Excellent':ratio>=4.5?'Good':ratio>=3?'Moderate':'Poor'} Contrast</div>
+      <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+        <span class="contrast-badge ${wcagAAA?'badge-pass':'badge-fail'}">AAA ${wcagAAA?'✓':'✗'}</span>
+        <span class="contrast-badge ${wcagAA?'badge-pass':'badge-fail'}">AA Normal ${wcagAA?'✓':'✗'}</span>
+        <span class="contrast-badge ${wcagAALarge?'badge-pass':'badge-fail'}">AA Large ${wcagAALarge?'✓':'✗'}</span>
+      </div>
+    </div>`;
+}
+
+// ── Color Mixer ──
+function mixColors(){
+  const a=document.getElementById('mixColorA').value;
+  const b=document.getElementById('mixColorB').value;
+  const ratio=parseInt(document.getElementById('mixRatio').value)/100;
+  document.getElementById('ratioA').textContent=Math.round(ratio*100)+'%';
+  document.getElementById('ratioB').textContent=Math.round((1-ratio)*100)+'%';
+  const ra=hexToRgb(a),rb=hexToRgb(b);
+  const mixed=rgbToHex(ra.r*(ratio)+rb.r*(1-ratio),ra.g*(ratio)+rb.g*(1-ratio),ra.b*(ratio)+rb.b*(1-ratio));
+  document.getElementById('mixSwatch').style.background=mixed;
+  document.getElementById('mixHex').textContent=mixed;
+  // Mix steps
+  const steps=document.getElementById('mixSteps');
+  steps.innerHTML=Array.from({length:8},(_,i)=>{
+    const t=i/7;const mr=hexToRgb(a),mb=hexToRgb(b);
+    const sc=rgbToHex(mr.r*(1-t)+mb.r*t,mr.g*(1-t)+mb.g*t,mr.b*(1-t)+mb.b*t);
+    return`<div style="flex:1;background:${sc};cursor:pointer;title='${sc}'" onclick="copyHex('${sc}')" title="${sc}"></div>`;
+  }).join('');
+}
+function copyMixResult(){copyHex(document.getElementById('mixHex').textContent)}
+
+// ── Save / Load ──
+function savePalette(){
+  if(!currentColors.length){showToast('Generate a palette first!');return}
+  const name=`Palette ${savedPalettes.length+1}`;
+  savedPalettes.unshift({name,colors:[...currentColors],time:new Date().toLocaleTimeString()});
+  if(savedPalettes.length>20)savedPalettes.pop();
+  localStorage.setItem('flow.palettes',JSON.stringify(savedPalettes));
+  renderSaved();showToast('Palette saved! 💾');
+}
+function renderSaved(){
+  const card=document.getElementById('savedCard');
+  const list=document.getElementById('savedList');
+  if(!savedPalettes.length){card.classList.add('hidden');return}
+  card.classList.remove('hidden');
+  list.innerHTML=savedPalettes.map((p,i)=>`
+    <div class="saved-palette-item" onclick="loadPalette(${i})">
+      <div style="display:flex;gap:4px;margin-bottom:6px;border-radius:6px;overflow:hidden;height:20px">
+        ${p.colors.map(c=>`<div class="saved-swatch" style="background:${c}"></div>`).join('')}
+      </div>
+      <div class="saved-palette-meta">
+        <span class="saved-palette-name">${p.name}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="saved-palette-time">${p.time}</span>
+          <button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:.7rem;color:#dc3545;border-color:#dc354533" onclick="event.stopPropagation();deletePalette(${i})">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+function loadPalette(i){currentColors=[...savedPalettes[i].colors];lockedColors={};renderPalette();updateGradient();showToast('Palette loaded!')}
+function deletePalette(i){savedPalettes.splice(i,1);localStorage.setItem('flow.palettes',JSON.stringify(savedPalettes));renderSaved()}
+function clearSaved(){savedPalettes=[];localStorage.removeItem('flow.palettes');renderSaved()}
+
+// ── Tab switch ──
+function switchTab(id,btn){
+  ['gradient','contrast','mixer'].forEach(t=>document.getElementById('tab-'+t).classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.remove('hidden');
+  btn.classList.add('active');
+  if(id==='contrast')checkContrast();
+  if(id==='mixer')mixColors();
+}
+
+// ── Toast ──
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+
+// ── Init ──
+generatePalette();
+renderSaved();
+checkContrast();
+mixColors();
+</script>
+</body>
+</html>
