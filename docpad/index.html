@@ -746,40 +746,57 @@ html[data-theme="dark"] .pdf-page-wrapper {
    The browser's native print engine handles fonts, images, page breaks,
    and PDF generation — way more reliable than html2canvas/html2pdf.       */
 @media print {
-  /* Reset page chrome — let the document fill the printable area */
   @page {
     margin: 0.75in;
   }
-  html, body {
+
+  /* Force light mode for printing regardless of dark mode setting */
+  html, html[data-theme="dark"] {
     background: #fff !important;
+    --bg: #fff !important;
+    --bg-soft: #fff !important;
+    --surface: #fff !important;
+    --border: #ccc !important;
+    --text: #000 !important;
+    --paper-bg: #fff !important;
+    --paper-text: #000 !important;
     height: auto;
   }
-  body {
-    font-family: 'Charter', Georgia, 'Times New Roman', serif;
-    color: #000;
+
+  body, body * {
+    background: #fff !important;
+    color: #000 !important;
+    border-color: #ccc !important;
   }
 
-  /* Hide everything in the app — home, topbar, toolbar, modal, footer, toast */
+  body {
+    font-family: 'Charter', Georgia, 'Times New Roman', serif;
+  }
+
+  /* Hide all app UI */
   #home-view,
   .topbar,
   .toolbar,
   .editor-footer,
   .modal-backdrop,
-  #toast {
+  #toast,
+  #image-toolbar,
+  #tool-overflow-menu {
     display: none !important;
   }
 
-  /* Strip the editor-view container's scroll/background so it doesn't fight
-     the printed page */
   #editor-view {
     display: block !important;
     height: auto !important;
     background: #fff !important;
   }
+
   .canvas {
     overflow: visible !important;
     padding: 0 !important;
+    background: #fff !important;
   }
+
   .paper {
     max-width: none !important;
     margin: 0 !important;
@@ -788,9 +805,10 @@ html[data-theme="dark"] .pdf-page-wrapper {
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
   }
 
-  /* Render the document title above the content */
   .paper::before {
     content: attr(data-print-title);
     display: block;
@@ -800,18 +818,20 @@ html[data-theme="dark"] .pdf-page-wrapper {
     margin-bottom: 1em;
     border-bottom: 1px solid #ccc;
     padding-bottom: 0.5em;
-    color: #000;
+    color: #000 !important;
+    background: #fff !important;
   }
   .paper[data-print-title=""]::before { display: none; }
 
-  /* Make sure the editor itself is fully visible, not constrained */
   #editor {
     min-height: 0 !important;
     outline: none !important;
-    color: #000;
+    color: #000 !important;
+    background: #fff !important;
     font-size: 12pt;
     line-height: 1.6;
   }
+
   #editor img {
     max-width: 100% !important;
     height: auto !important;
@@ -822,11 +842,16 @@ html[data-theme="dark"] .pdf-page-wrapper {
   #editor h1, #editor h2, #editor h3 {
     page-break-after: avoid;
     break-after: avoid;
+    color: #000 !important;
   }
   #editor img.selected {
     outline: none !important;
   }
-  /* Force background colors / text colors to print (especially for blockquote borders) */
+  #editor blockquote {
+    border-left-color: #ccc !important;
+    color: #444 !important;
+    background: #fff !important;
+  }
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
