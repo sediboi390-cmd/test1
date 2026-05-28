@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Link Shortener — Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f6f3;--surface:#fff;--border:#e5e2da;
+  --accent:#3b82f6;--accent-hover:#2563eb;
+  --text:#1e1e1e;--muted:#888580;
+  --radius:14px;--shadow:0 2px 12px rgba(0,0,0,.06);
+}
+html.dark{--bg:#111113;--surface:#1c1c1f;--border:#2a2a2e;--text:#ececef;--muted:#7a7a82}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.hidden{display:none!important}
+header{max-width:760px;margin:0 auto;padding:40px 24px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--muted);text-decoration:none;padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);transition:all .15s}
+.back-btn:hover{color:var(--accent);border-color:var(--accent)}
+.header-brand{display:flex;align-items:center;gap:10px}
+.header-icon{width:40px;height:40px;background:linear-gradient(135deg,#3b82f6,#60a5fa);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.header-brand h1{font-size:1.3rem;font-weight:700;letter-spacing:-.02em}
+.header-brand p{font-size:.78rem;color:var(--muted)}
+.dark-toggle{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.dark-toggle:hover{border-color:var(--accent);color:var(--accent)}
+main{max-width:760px;margin:28px auto 80px;padding:0 24px;display:flex;flex-direction:column;gap:18px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.card-label{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font:inherit;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none;border:none}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:5px 12px;font-size:.78rem}
+.btn-danger{background:transparent;color:#dc3545;border:1px solid #dc354533}
+.btn-danger:hover{background:#dc354511}
+footer{text-align:center;padding:16px 0 40px;font-size:.75rem;color:var(--muted)}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e1e1e;color:#fff;padding:10px 20px;border-radius:999px;font-size:.82rem;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="../" class="back-btn">← Back to Hub</a>
+  <div class="header-brand">
+    <div class="header-icon">🔗</div>
+    <div><h1>Link Shortener</h1><p>Shorten any URL instantly</p></div>
+  </div>
+  <button class="dark-toggle" id="darkToggle">🌙</button>
+</header>
+
+<main>
+
+  <!-- Input -->
+  <div class="card">
+    <div class="card-label">Paste your long URL</div>
+    <div style="display:flex;gap:8px">
+      <input type="url" id="urlInput" placeholder="https://your-very-long-url.com/path/to/page"
+        style="flex:1;padding:12px 14px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font:inherit;font-size:.9rem;outline:none;transition:border-color .15s"
+        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+        onkeydown="if(event.key==='Enter')shortenUrl()"/>
+      <button class="btn btn-primary" id="shortenBtn" onclick="shortenUrl()">⚡ Shorten</button>
+    </div>
+    <div class="error-box hidden" id="errorBox" style="margin-top:10px"></div>
+  </div>
+
+  <!-- Loading -->
+  <div class="card hidden" id="loadingCard">
+    <div style="display:flex;align-items:center;gap:12px;padding:4px 0">
+      <div class="spinner"></div>
+      <span style="font-size:.88rem;color:var(--muted)">Shortening your link…</span>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="card hidden" id="resultCard">
+    <div class="card-label">✅ Your Short Link</div>
+    <div class="result-wrap">
+      <div class="short-url-box">
+        <a id="shortUrlLink" href="#" target="_blank"></a>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-primary btn-sm" id="copyBtn" onclick="copyShortUrl()">📋 Copy</button>
+          <button class="btn btn-outline btn-sm" id="qrToggleBtn" onclick="toggleQR()">📱 QR</button>
+        </div>
+      </div>
+      <div class="original-url" id="originalUrlDisplay"></div>
+    </div>
+    <!-- QR Code -->
+    <div class="hidden" id="qrSection" style="margin-top:18px;text-align:center">
+      <div class="card-label">QR Code</div>
+      <div id="qrCode" style="display:inline-block;padding:14px;background:#fff;border-radius:10px;border:1px solid var(--border)"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:center">
+        <button class="btn btn-outline btn-sm" onclick="downloadQR()">⬇️ Download QR</button>
+      </div>
+    </div>
+    <button class="btn btn-outline" style="margin-top:14px;width:100%;justify-content:center" onclick="resetForm()">🔗 Shorten Another</button>
+  </div>
+
+  <!-- History -->
+  <div class="card hidden" id="historyCard">
+    <div class="card-label" style="display:flex;justify-content:space-between;align-items:center">
+      <span>🕓 History</span>
+      <button class="btn btn-outline btn-sm" onclick="clearHistory()">Clear</button>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+</main>
+
+<footer>Flow Link Shortener</footer>
+<div class="toast" id="toast"></div>
+
+<style>
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.result-wrap{display:flex;flex-direction:column;gap:8px}
+.short-url-box{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:rgba(59,130,246,.06);border:1.5px solid rgba(59,130,246,.2);border-radius:10px;flex-wrap:wrap}
+.short-url-box a{font-size:1.05rem;font-weight:700;color:var(--accent);text-decoration:none;word-break:break-all}
+.short-url-box a:hover{text-decoration:underline}
+.original-url{font-size:.75rem;color:var(--muted);word-break:break-all;padding:0 2px}
+.history-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;flex-wrap:wrap}
+.history-item:last-child{margin-bottom:0}
+.history-item-info{flex:1;min-width:0}
+.history-short{font-size:.88rem;font-weight:600;color:var(--accent)}
+.history-short a{color:inherit;text-decoration:none}
+.history-short a:hover{text-decoration:underline}
+.history-original{font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.history-time{font-size:.7rem;color:var(--muted);margin-top:2px}
+.error-box{background:rgba(220,53,69,.08);border:1px solid rgba(220,53,69,.2);border-radius:9px;padding:10px 14px;font-size:.84rem;color:#dc3545}
+</style>
+
+<script>
+// ── Dark mode ──
+const html=document.documentElement,darkBtn=document.getElementById('darkToggle');
+const saved=localStorage.getItem('flow.darkMode');
+if(saved==='true'||(!saved&&window.matchMedia('(prefers-color-scheme:dark)').matches)){html.classList.add('dark');darkBtn.textContent='☀️'}
+darkBtn.addEventListener('click',()=>{const d=html.classList.toggle('dark');darkBtn.textContent=d?'☀️':'🌙';localStorage.setItem('flow.darkMode',d)});
+
+let currentShortUrl = '';
+let history = JSON.parse(localStorage.getItem('flow.links') || '[]');
+let qrGenerated = false;
+
+// ── Shorten ──
+async function shortenUrl() {
+  const input = document.getElementById('urlInput');
+  const url = input.value.trim();
+
+  hideError();
+  if (!url) { showError('Please paste a URL first.'); return; }
+  if (!isValidUrl(url)) { showError('Please enter a valid URL (must start with http:// or https://).'); return; }
+
+  document.getElementById('shortenBtn').disabled = true;
+  document.getElementById('loadingCard').classList.remove('hidden');
+  document.getElementById('resultCard').classList.add('hidden');
+
+  try {
+    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
+    if (!res.ok) throw new Error('Failed to shorten URL');
+    const shortUrl = await res.text();
+
+    if (!shortUrl.startsWith('http')) throw new Error('Invalid response from server');
+
+    currentShortUrl = shortUrl;
+    qrGenerated = false;
+    document.getElementById('qrCode').innerHTML = '';
+    document.getElementById('qrSection').classList.add('hidden');
+
+    document.getElementById('shortUrlLink').href = shortUrl;
+    document.getElementById('shortUrlLink').textContent = shortUrl;
+    document.getElementById('originalUrlDisplay').textContent = '↳ ' + url;
+
+    document.getElementById('loadingCard').classList.add('hidden');
+    document.getElementById('resultCard').classList.remove('hidden');
+
+    addHistory(url, shortUrl);
+
+  } catch(err) {
+    document.getElementById('loadingCard').classList.add('hidden');
+    showError('Could not shorten the URL. Please check your internet connection and try again.');
+  } finally {
+    document.getElementById('shortenBtn').disabled = false;
+  }
+}
+
+// ── QR Code ──
+function toggleQR() {
+  const sec = document.getElementById('qrSection');
+  const isHidden = sec.classList.contains('hidden');
+  sec.classList.toggle('hidden', !isHidden);
+
+  if (isHidden && !qrGenerated) {
+    document.getElementById('qrCode').innerHTML = '';
+    new QRCode(document.getElementById('qrCode'), {
+      text: currentShortUrl,
+      width: 180, height: 180,
+      colorDark: '#1e1e1e', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    qrGenerated = true;
+  }
+}
+
+function downloadQR() {
+  const canvas = document.querySelector('#qrCode canvas');
+  if (!canvas) return;
+  const a = document.createElement('a');
+  a.download = 'qrcode.png';
+  a.href = canvas.toDataURL();
+  a.click();
+}
+
+// ── Copy ──
+function copyShortUrl() {
+  navigator.clipboard.writeText(currentShortUrl).then(() => {
+    showToast('Copied to clipboard! 🎉');
+  });
+}
+
+// ── Reset ──
+function resetForm() {
+  document.getElementById('urlInput').value = '';
+  document.getElementById('resultCard').classList.add('hidden');
+  document.getElementById('qrSection').classList.add('hidden');
+  hideError();
+  document.getElementById('urlInput').focus();
+}
+
+// ── History ──
+function addHistory(original, short) {
+  history.unshift({ original, short, time: new Date().toLocaleTimeString() });
+  if (history.length > 20) history.pop();
+  localStorage.setItem('flow.links', JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const card = document.getElementById('historyCard');
+  const list = document.getElementById('historyList');
+  if (!history.length) { card.classList.add('hidden'); return; }
+  card.classList.remove('hidden');
+  list.innerHTML = history.map((h, i) => `
+    <div class="history-item">
+      <div class="history-item-info">
+        <div class="history-short"><a href="${h.short}" target="_blank">${h.short}</a></div>
+        <div class="history-original">${h.original}</div>
+        <div class="history-time">${h.time}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-outline btn-sm" onclick="copyLink('${h.short}')">📋</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteHistory(${i})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function copyLink(url) {
+  navigator.clipboard.writeText(url).then(() => showToast('Copied!'));
+}
+
+function deleteHistory(i) {
+  history.splice(i, 1);
+  localStorage.setItem('flow.links', JSON.stringify(history));
+  renderHistory();
+}
+
+function clearHistory() {
+  history = [];
+  localStorage.removeItem('flow.links');
+  renderHistory();
+}
+
+// ── Helpers ──
+function isValidUrl(url) {
+  try { const u = new URL(url); return u.protocol === 'http:' || u.protocol === 'https:'; }
+  catch { return false; }
+}
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = '⚠️ ' + msg;
+  el.classList.remove('hidden');
+}
+function hideError() { document.getElementById('errorBox').classList.add('hidden'); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// Init
+renderHistory();
+</script>
+</body>
+</html>
