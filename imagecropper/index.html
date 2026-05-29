@@ -853,39 +853,47 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 // ── Download ───────────────────────────────────────
 function download(format) {
   if (!img) return;
+
+  // Step 1: Create a full-size canvas that replicates exactly what is
+  // drawn on the main canvas (same transforms, same scale).
+  const fullCanvas = document.createElement('canvas');
+  fullCanvas.width  = canvas.width;
+  fullCanvas.height = canvas.height;
+  const fc = fullCanvas.getContext('2d');
+
   const swapped = rotation === 90 || rotation === 270;
-  const dispW = swapped ? origH : origW;
-  const dispH = swapped ? origW : origH;
-  const s2 = Math.min(1, canvas.width / dispW, canvas.height / dispH) * zoom;
+  const dw = canvas.width;
+  const dh = canvas.height;
+  const s = Math.min(1, dw / (swapped ? origH : origW), dh / (swapped ? origW : origH)) * zoom;
 
-  // Real pixel crop dimensions
-  const rW = Math.round(cropW / s2);
-  const rH = Math.round(cropH / s2);
+  fc.save();
+  fc.translate(dw / 2, dh / 2);
+  fc.rotate(rotation * Math.PI / 180);
+  fc.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+  fc.drawImage(img, -origW * s / 2, -origH * s / 2, origW * s, origH * s);
+  fc.restore();
 
+  // Step 2: Extract exactly the crop rectangle from the full canvas.
+  // cropX/cropY/cropW/cropH are already in canvas pixel coordinates.
   const off = document.createElement('canvas');
-  off.width = rW; off.height = rH;
+  off.width  = Math.round(cropW);
+  off.height = Math.round(cropH);
   const oc = off.getContext('2d');
 
-  oc.save();
-  oc.translate(rW / 2, rH / 2);
-  oc.rotate(rotation * Math.PI / 180);
-  oc.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+  oc.drawImage(
+    fullCanvas,
+    Math.round(cropX), Math.round(cropY),   // source x, y
+    Math.round(cropW), Math.round(cropH),   // source w, h
+    0, 0,                                    // dest x, y
+    Math.round(cropW), Math.round(cropH)    // dest w, h
+  );
 
-  // Image position relative to crop center
-  const imgCX = canvas.width / 2 - origW * s2 / 2;
-  const imgCY = canvas.height / 2 - origH * s2 / 2;
-  const offsetX = (imgCX - cropX) / s2;
-  const offsetY = (imgCY - cropY) / s2;
-
-  oc.drawImage(img, offsetX, offsetY, origW, origH);
-  oc.restore();
-
-  const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
-  const quality = format === 'jpg' ? 0.92 : 1;
+  const mime    = format === 'jpg' ? 'image/jpeg' : 'image/png';
+  const quality = format === 'jpg' ? 0.95 : 1;
   const url = off.toDataURL(mime, quality);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'cropped.' + format;
+  const a   = document.createElement('a');
+  a.href     = url;
+  a.download = 'cropped.' + (format === 'jpg' ? 'jpg' : 'png');
   a.click();
 }
 
