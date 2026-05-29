@@ -626,6 +626,17 @@ function debtorCardHTML(d) {
                 </tr>`;
               }).join('')}
             </tbody>
+            <tfoot>
+              <tr style="background:rgba(239,68,68,.06);border-top:2px solid var(--border)">
+                <td colspan="2" style="padding:8px 10px;font-size:.76rem;font-weight:700;color:var(--text)">📊 TOTAL</td>
+                ${(d.interestType==='monthly'||d.interestType==='yearly')?`<td style="padding:8px 10px;text-align:right;font-weight:700;color:#3b82f6;font-size:.82rem">${fmt(schedule.reduce((sum,r)=>sum+(r.capitalDue||0),0))}</td>`:''}
+                <td style="padding:8px 10px;text-align:right;font-weight:700;color:#f59e0b;font-size:.82rem">${fmt(schedule.reduce((sum,r)=>sum+(r.interestDue||0),0))}</td>
+                ${(d.interestType==='monthly'||d.interestType==='yearly')?`<td style="padding:8px 10px;text-align:right;font-weight:700;color:#10b981;font-size:.82rem">${fmt(schedule.reduce((sum,r)=>sum+(r.paymentDue||0),0))}</td>`:''}
+                <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--text);font-size:.82rem">${fmt(schedule.length?schedule[schedule.length-1].totalInterest:0)}</td>
+                <td style="padding:8px 10px;text-align:right;font-weight:800;color:var(--accent);font-size:.88rem">${fmt(d.amount+(schedule.length?schedule[schedule.length-1].totalInterest:0))}</td>
+                <td></td>
+              </tr>
+            </tfoot>
           </table>
         </div>` : ''}
       </div>`;
