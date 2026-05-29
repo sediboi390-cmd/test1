@@ -216,10 +216,27 @@ html.dark .toast{background:#ececef;color:#111}
         </div>
         <div class="field">
           <label>Interest Type</label>
-          <select id="dInterestType">
+          <select id="dInterestType" onchange="toggleTermField()">
             <option value="none">No Interest</option>
+            <option value="term">Per Term (fixed)</option>
             <option value="monthly">Per Month</option>
             <option value="yearly">Per Year</option>
+          </select>
+        </div>
+      </div>
+      <!-- Term fields (shown only when Per Term is selected) -->
+      <div class="form-row hidden" id="termFields">
+        <div class="field">
+          <label>Term Length</label>
+          <input type="number" id="dTermLength" min="1" step="1" placeholder="e.g. 3" value="1"/>
+        </div>
+        <div class="field">
+          <label>Term Unit</label>
+          <select id="dTermUnit">
+            <option value="days">Days</option>
+            <option value="weeks">Weeks</option>
+            <option value="months" selected>Months</option>
+            <option value="years">Years</option>
           </select>
         </div>
       </div>
@@ -330,7 +347,18 @@ function calcInterest(debtor, asOf) {
   const diffMs = now - borrowDate;
   if (diffMs <= 0) return 0;
   const diffDays = diffMs / (1000 * 60 * 60 * 24);
-  if (debtor.interestType === 'monthly') {
+  if (debtor.interestType === 'term') {
+    // Per term: fixed interest applied every N days/weeks/months/years
+    const termLen = debtor.termLength || 1;
+    const termUnit = debtor.termUnit || 'months';
+    let termDays;
+    if (termUnit === 'days')   termDays = termLen;
+    else if (termUnit === 'weeks')  termDays = termLen * 7;
+    else if (termUnit === 'months') termDays = termLen * 30.4375;
+    else                            termDays = termLen * 365.25;
+    const termsElapsed = Math.floor(diffDays / termDays);
+    return debtor.amount * (debtor.rate / 100) * termsElapsed;
+  } else if (debtor.interestType === 'monthly') {
     const months = diffDays / 30.4375;
     return debtor.amount * (debtor.rate / 100) * months;
   } else if (debtor.interestType === 'yearly') {
@@ -419,7 +447,9 @@ function debtorCardHTML(d) {
   const badgeClass = status === 'paid' ? 'badge-paid' : status === 'partial' ? 'badge-partial' : 'badge-unpaid';
   const badgeLabel = status.toUpperCase();
 
-  const interestLabel = d.interestType === 'monthly' ? `${d.rate}%/month`
+  const interestLabel = d.interestType === 'term'
+    ? `${d.rate}%/${d.termLength||1} ${d.termUnit||'months'}`
+    : d.interestType === 'monthly' ? `${d.rate}%/month`
     : d.interestType === 'yearly' ? `${d.rate}%/year` : 'No interest';
 
   let paymentsHTML = '';
@@ -507,6 +537,14 @@ function attachCardListeners() {
 
 <script>
 // ══════════════════════════════════════════════
+//  TERM FIELD TOGGLE
+// ══════════════════════════════════════════════
+function toggleTermField() {
+  const type = document.getElementById('dInterestType').value;
+  document.getElementById('termFields').classList.toggle('hidden', type !== 'term');
+}
+
+// ══════════════════════════════════════════════
 //  DEBTOR MODAL
 // ══════════════════════════════════════════════
 let editingDebtorId = null;
@@ -525,7 +563,10 @@ function openDebtorModal(id) {
     document.getElementById('dDate').value        = d.date;
     document.getElementById('dRate').value        = d.rate || 0;
     document.getElementById('dInterestType').value= d.interestType || 'none';
+    document.getElementById('dTermLength').value  = d.termLength || 1;
+    document.getElementById('dTermUnit').value    = d.termUnit || 'months';
     document.getElementById('dNotes').value       = d.notes || '';
+    toggleTermField();
   } else {
     title.textContent = '💰 Add Debtor';
     document.getElementById('dName').value        = '';
@@ -533,7 +574,10 @@ function openDebtorModal(id) {
     document.getElementById('dDate').value        = new Date().toISOString().split('T')[0];
     document.getElementById('dRate').value        = '0';
     document.getElementById('dInterestType').value= 'none';
+    document.getElementById('dTermLength').value  = '1';
+    document.getElementById('dTermUnit').value    = 'months';
     document.getElementById('dNotes').value       = '';
+    toggleTermField();
   }
   modal.classList.remove('hidden');
   setTimeout(() => document.getElementById('dName').focus(), 60);
@@ -554,6 +598,8 @@ document.getElementById('debtorModalSave').addEventListener('click', () => {
   const date   = document.getElementById('dDate').value;
   const rate   = parseFloat(document.getElementById('dRate').value) || 0;
   const interestType = document.getElementById('dInterestType').value;
+  const termLength = parseInt(document.getElementById('dTermLength').value) || 1;
+  const termUnit   = document.getElementById('dTermUnit').value;
   const notes  = document.getElementById('dNotes').value.trim();
 
   if (!name)           { showToast('⚠️ Name is required'); return; }
@@ -562,9 +608,9 @@ document.getElementById('debtorModalSave').addEventListener('click', () => {
 
   if (editingDebtorId) {
     const d = debtors.find(x => x.id === editingDebtorId);
-    if (d) { d.name=name; d.amount=amount; d.date=date; d.rate=rate; d.interestType=interestType; d.notes=notes; }
+    if (d) { d.name=name; d.amount=amount; d.date=date; d.rate=rate; d.interestType=interestType; d.termLength=termLength; d.termUnit=termUnit; d.notes=notes; }
   } else {
-    debtors.unshift({ id:uid(), name, amount, date, rate, interestType, notes, payments:[] });
+    debtors.unshift({ id:uid(), name, amount, date, rate, interestType, termLength, termUnit, notes, payments:[] });
   }
   saveData(); renderAll(); closeDebtorModal();
   showToast(editingDebtorId ? '✅ Debtor updated' : '✅ Debtor added');
@@ -641,7 +687,9 @@ function shareDebtor(id) {
   const paid     = totalPaid(d);
   const rem      = remaining(d);
   const status   = getStatus(d).toUpperCase();
-  const interestLine = d.interestType !== 'none' && d.rate > 0
+  const interestLine = d.interestType === 'term' && d.rate > 0
+    ? `\nInterest: ${d.rate}% per ${d.termLength||1} ${d.termUnit||'months'} → ${fmt(interest)} accrued`
+    : d.interestType !== 'none' && d.rate > 0
     ? `\nInterest: ${d.rate}%/${d.interestType === 'monthly' ? 'month' : 'year'} → ${fmt(interest)} accrued`
     : '';
   const paymentLines = (d.payments || []).map(p =>
