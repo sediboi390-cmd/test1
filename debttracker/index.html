@@ -390,9 +390,11 @@ function calcInterest(debtor, asOf) {
   return 0;
 }
 
-// Generate payment schedule for term/biweekly
+// Generate payment schedule for term/biweekly/monthly/yearly
 function generateSchedule(debtor) {
   const schedule = [];
+  const now = new Date();
+
   if (debtor.interestType === 'term') {
     const termLen = debtor.termLength || 1;
     const termUnit = debtor.termUnit || 'months';
@@ -403,33 +405,61 @@ function generateSchedule(debtor) {
     else                            termDays = termLen * 365.25;
     const interestPerTerm = debtor.amount * (debtor.rate / 100);
     const startDate = new Date(debtor.date + 'T00:00:00');
-    const now = new Date();
-    // Show up to 12 terms or until today + 3 terms ahead
     const maxTerms = Math.max(12, Math.floor(((now - startDate) / (1000 * 60 * 60 * 24)) / termDays) + 3);
     for (let i = 1; i <= Math.min(maxTerms, 24); i++) {
       const dueDate = new Date(startDate.getTime() + i * termDays * 24 * 60 * 60 * 1000);
-      schedule.push({
-        term: i,
-        dueDate,
-        interestDue: interestPerTerm,
-        totalDue: debtor.amount * (debtor.rate / 100) * i,
-        isPast: dueDate <= now
-      });
+      schedule.push({ term: i, dueDate, interestDue: interestPerTerm, totalInterest: interestPerTerm * i, totalDue: interestPerTerm * i, isPast: dueDate <= now });
     }
+
   } else if (debtor.interestType === 'biweekly') {
     const cutoff = debtor.cutoffDate
       ? new Date(debtor.cutoffDate + 'T00:00:00')
       : new Date(debtor.date + 'T00:00:00');
     const interestPerPeriod = debtor.amount * (debtor.rate / 100);
-    const now = new Date();
-    const maxPeriods = debtor.biweeklyTerms || 6; // respect user-defined number of terms
+    const maxPeriods = debtor.biweeklyTerms || 6;
     for (let i = 0; i < maxPeriods; i++) {
       const dueDate = new Date(cutoff.getTime() + i * 14 * 24 * 60 * 60 * 1000);
+      schedule.push({ term: i + 1, dueDate, interestDue: interestPerPeriod, totalInterest: interestPerPeriod * (i + 1), totalDue: interestPerPeriod * (i + 1), isPast: dueDate <= now });
+    }
+
+  } else if (debtor.interestType === 'monthly') {
+    const startDate = new Date(debtor.date + 'T00:00:00');
+    const interestPerMonth = debtor.amount * (debtor.rate / 100);
+    const monthsElapsed = Math.floor(((now - startDate) / (1000 * 60 * 60 * 24)) / 30.4375);
+    const maxMonths = Math.min(Math.max(monthsElapsed + 6, 6), 24);
+    const paid = totalPaid(debtor);
+    for (let i = 1; i <= maxMonths; i++) {
+      const dueDate = new Date(startDate);
+      dueDate.setMonth(dueDate.getMonth() + i);
+      const totalInterest = interestPerMonth * i;
+      const totalOwed = debtor.amount + totalInterest;
       schedule.push({
-        term: i + 1,
+        term: i,
         dueDate,
-        interestDue: interestPerPeriod,
-        totalDue: interestPerPeriod * (i + 1),
+        interestDue: interestPerMonth,
+        totalInterest,
+        totalDue: Math.max(0, totalOwed - paid),
+        isPast: dueDate <= now
+      });
+    }
+
+  } else if (debtor.interestType === 'yearly') {
+    const startDate = new Date(debtor.date + 'T00:00:00');
+    const interestPerYear = debtor.amount * (debtor.rate / 100);
+    const yearsElapsed = Math.floor(((now - startDate) / (1000 * 60 * 60 * 24)) / 365.25);
+    const maxYears = Math.min(Math.max(yearsElapsed + 3, 3), 10);
+    const paid = totalPaid(debtor);
+    for (let i = 1; i <= maxYears; i++) {
+      const dueDate = new Date(startDate);
+      dueDate.setFullYear(dueDate.getFullYear() + i);
+      const totalInterest = interestPerYear * i;
+      const totalOwed = debtor.amount + totalInterest;
+      schedule.push({
+        term: i,
+        dueDate,
+        interestDue: interestPerYear,
+        totalInterest,
+        totalDue: Math.max(0, totalOwed - paid),
         isPast: dueDate <= now
       });
     }
@@ -522,27 +552,32 @@ function debtorCardHTML(d) {
     : d.interestType === 'monthly' ? `${d.rate}%/month`
     : d.interestType === 'yearly' ? `${d.rate}%/year` : 'No interest';
 
-  // Generate schedule for term/biweekly
+  // Generate schedule for term/biweekly/monthly/yearly
   let scheduleHTML = '';
-  if ((d.interestType === 'term' || d.interestType === 'biweekly') && d.rate > 0) {
+  if ((d.interestType === 'term' || d.interestType === 'biweekly' || d.interestType === 'monthly' || d.interestType === 'yearly') && d.rate > 0) {
     const schedule = generateSchedule(d);
     const now = new Date();
     const nextDue = schedule.find(s => !s.isPast);
-    const lastPast = [...schedule].reverse().find(s => s.isPast);
+    const schedLabel = d.interestType === 'monthly' ? '📅 Monthly Due Schedule'
+      : d.interestType === 'yearly' ? '📅 Yearly Due Schedule'
+      : '📅 Expected Bill Schedule';
+    const colHeader = d.interestType === 'monthly' ? 'Month'
+      : d.interestType === 'yearly' ? 'Year' : 'Term #';
     scheduleHTML = `
       <div style="margin-top:6px">
         <button class="payments-toggle" data-id="${d.id}" data-toggle="schedule">
-          📅 ${expandedPayments.has(d.id+'_sched') ? '▾' : '▸'} Expected Bill Schedule
+          ${expandedPayments.has(d.id+'_sched') ? '▾' : '▸'} ${schedLabel}
         </button>
         ${expandedPayments.has(d.id+'_sched') ? `
         <div style="margin-top:8px;overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:.74rem">
             <thead>
               <tr style="background:var(--bg)">
-                <th style="padding:6px 8px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">#</th>
+                <th style="padding:6px 8px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">${colHeader}</th>
                 <th style="padding:6px 8px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Due Date</th>
                 <th style="padding:6px 8px;text-align:right;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Interest</th>
                 <th style="padding:6px 8px;text-align:right;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Total Interest</th>
+                <th style="padding:6px 8px;text-align:right;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Balance Due</th>
                 <th style="padding:6px 8px;text-align:center;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Status</th>
               </tr>
             </thead>
@@ -559,7 +594,8 @@ function debtorCardHTML(d) {
                   <td style="padding:6px 8px;font-weight:600">${s.term}</td>
                   <td style="padding:6px 8px">${formatDate(s.dueDate.toISOString().split('T')[0])}</td>
                   <td style="padding:6px 8px;text-align:right;color:#f59e0b;font-weight:600">+${fmt(s.interestDue)}</td>
-                  <td style="padding:6px 8px;text-align:right;font-weight:600">${fmt(s.totalDue)}</td>
+                  <td style="padding:6px 8px;text-align:right;font-weight:600">${fmt(s.totalInterest)}</td>
+                  <td style="padding:6px 8px;text-align:right;font-weight:700;color:var(--accent)">${fmt(s.totalDue)}</td>
                   <td style="padding:6px 8px;text-align:center">${statusBadge}</td>
                 </tr>`;
               }).join('')}
