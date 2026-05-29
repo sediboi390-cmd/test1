@@ -6,7 +6,7 @@
 <title>GIF Maker — Flow</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/build/gifshot.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/omggif@1.0.10/omggif.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f7f6f3;--surface:#fff;--border:#e5e2da;--accent:#10b981;--accent-hover:#059669;--accent-soft:rgba(16,185,129,.1);--text:#1e1e1e;--muted:#888580;--danger:#dc2626;--radius:14px;--shadow:0 2px 12px rgba(0,0,0,.06)}
@@ -47,6 +47,9 @@ html.dark .form-group input,html.dark .form-group select{background:#18181b}
 .btn-primary:disabled{opacity:.55;cursor:not-allowed}
 .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
 .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+</style>
+
+<style>
 .btn-sm{padding:5px 10px;font-size:.75rem}
 .btn-danger{background:transparent;color:var(--danger);border:1px solid transparent}
 .btn-danger:hover{background:#fee2e2;border-color:#fca5a5}
@@ -73,6 +76,7 @@ html.dark .toast{background:#ececef;color:#111}
 footer{text-align:center;padding:16px 0 40px;font-size:.75rem;color:var(--muted)}
 @media(max-width:600px){header,main{padding-left:16px;padding-right:16px}.form-row{grid-template-columns:1fr 1fr}}
 </style>
+
 </head>
 <body>
 <header>
@@ -107,10 +111,10 @@ footer{text-align:center;padding:16px 0 40px;font-size:.75rem;color:var(--muted)
         <div class="form-group"><label>Start Time (s)</label><input type="number" id="startTime" value="0" min="0" step="0.1"/></div>
         <div class="form-group"><label>End Time (s)</label><input type="number" id="endTime" value="3" min="0" step="0.1"/></div>
         <div class="form-group"><label>FPS</label>
-          <select id="fps"><option value="8">8 FPS</option><option value="10" selected>10 FPS</option><option value="15">15 FPS</option></select>
+          <select id="fps"><option value="5">5 FPS</option><option value="8">8 FPS</option><option value="10" selected>10 FPS</option></select>
         </div>
         <div class="form-group"><label>Output Width</label>
-          <select id="outputWidth"><option value="320" selected>320 px</option><option value="480">480 px</option><option value="640">640 px</option></select>
+          <select id="outputWidth"><option value="240">240 px</option><option value="320" selected>320 px</option><option value="480">480 px</option></select>
         </div>
         <div class="form-group"><label>Speed</label>
           <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1× Normal</option><option value="2">2×</option></select>
@@ -153,15 +157,15 @@ footer{text-align:center;padding:16px 0 40px;font-size:.75rem;color:var(--muted)
     <div class="card" id="imgSettings" style="display:none">
       <div class="card-label">2 — Settings</div>
       <div class="form-row">
-        <div class="form-group"><label>Frame Delay (ms)</label><input type="number" id="frameDelay" value="300" min="50" max="2000" step="50"/></div>
+        <div class="form-group"><label>Frame Delay (ms)</label><input type="number" id="frameDelay" value="300" min="100" max="1000" step="50"/></div>
         <div class="form-group"><label>Output Width</label>
-          <select id="imgOutputWidth"><option value="320" selected>320 px</option><option value="480">480 px</option><option value="640">640 px</option></select>
+          <select id="imgOutputWidth"><option value="240">240 px</option><option value="320" selected>320 px</option><option value="480">480 px</option></select>
         </div>
         <div class="form-group"><label>Loop</label>
           <select id="imgLoop"><option value="0">Infinite</option><option value="1">1×</option><option value="3">3×</option></select>
         </div>
       </div>
-      <div style="margin-top:16px"><button class="btn btn-primary" id="convertImagesBtn" onclick="convertImages()">🎞️ Convert to GIF</button></div>
+      <div style="margin-top:16px"><button class="btn btn-primary" id="convertImagesBtn" onclick="convertImages()">🎞️ Build GIF</button></div>
     </div>
     <div class="card hidden" id="imagesProgress">
       <div class="card-label">Converting…</div>
@@ -188,7 +192,7 @@ footer{text-align:center;padding:16px 0 40px;font-size:.75rem;color:var(--muted)
 
 
 <script>
-// Dark mode
+// ── Dark mode ──
 const html=document.documentElement,dtBtn=document.getElementById('darkToggle');
 const saved=localStorage.getItem('flow.darkMode');
 if(saved==='true'||(saved===null&&window.matchMedia('(prefers-color-scheme:dark)').matches)){html.classList.add('dark');dtBtn.textContent='☀️'}
@@ -202,179 +206,301 @@ function switchTab(mode){
   document.getElementById('panelImages').classList.toggle('hidden',mode!=='images');
 }
 
-// ══ VIDEO TO GIF ══
-let videoFile=null;
-const videoDrop=document.getElementById('videoDrop');
-const videoInput=document.getElementById('videoInput');
+// ── GIF Encoding with omggif (pure JS, no workers) ──
+function quantizeFrame(imgData, width, height) {
+  const pixels = imgData.data;
+  // Build uniform 256-colour palette: 8r × 8g × 4b
+  const palette = [];
+  for (let r=0;r<8;r++) for (let g=0;g<8;g++) for (let b=0;b<4;b++) {
+    palette.push((Math.round(r*255/7)<<16)|(Math.round(g*255/7)<<8)|Math.round(b*255/3));
+  }
+  const indexed = new Uint8Array(width*height);
+  for (let i=0;i<width*height;i++) {
+    const ri=Math.round(pixels[i*4]*7/255);
+    const gi=Math.round(pixels[i*4+1]*7/255);
+    const bi=Math.round(pixels[i*4+2]*3/255);
+    indexed[i]=ri*32+gi*4+bi;
+  }
+  return {indexed, palette};
+}
 
-videoDrop.addEventListener('dragover',e=>{e.preventDefault();videoDrop.classList.add('drag-over')});
-videoDrop.addEventListener('dragleave',()=>videoDrop.classList.remove('drag-over'));
-videoDrop.addEventListener('drop',e=>{e.preventDefault();videoDrop.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('video/'))loadVideo(f);else showToast('Please drop a video file')});
-videoInput.addEventListener('change',e=>{if(e.target.files[0])loadVideo(e.target.files[0])});
+function encodeFramesToGIF(canvases, width, height, delayMs, loop) {
+  const bufSize = Math.max(width*height*canvases.length*4, 65536);
+  const buf = new Uint8Array(bufSize);
+  const gif = new GifWriter(buf, width, height, {loop: loop});
+  const delayCenti = Math.max(2, Math.round(delayMs/10));
+  canvases.forEach(canvas => {
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.getImageData(0,0,width,height);
+    const {indexed, palette} = quantizeFrame(imgData, width, height);
+    gif.addFrame(0, 0, width, height, indexed, {palette: palette, delay: delayCenti});
+  });
+  const bytes = buf.subarray(0, gif.end());
+  return new Blob([bytes], {type:'image/gif'});
+}
+
+// Draw an image/video-frame into a canvas of given size
+function drawToCanvas(source, w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  c.getContext('2d').drawImage(source, 0, 0, w, h);
+  return c;
+}
+</script>
+
+<script>
+// ══ VIDEO TO GIF ══
+let videoFile = null;
+const videoDrop  = document.getElementById('videoDrop');
+const videoInput = document.getElementById('videoInput');
+
+videoDrop.addEventListener('dragover', e=>{e.preventDefault();videoDrop.classList.add('drag-over')});
+videoDrop.addEventListener('dragleave', ()=>videoDrop.classList.remove('drag-over'));
+videoDrop.addEventListener('drop', e=>{
+  e.preventDefault(); videoDrop.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if(f && f.type.startsWith('video/')) loadVideo(f); else showToast('Please drop a video file');
+});
+videoInput.addEventListener('change', e=>{if(e.target.files[0]) loadVideo(e.target.files[0])});
 
 function loadVideo(file){
-  videoFile=file;
-  const v=document.getElementById('videoPreview');
-  v.src=URL.createObjectURL(file);v.classList.remove('hidden');
-  v.onloadedmetadata=()=>{
-    document.getElementById('endTime').value=Math.min(3,+v.duration.toFixed(1));
-    document.getElementById('videoSettings').style.display='';
+  videoFile = file;
+  const v = document.getElementById('videoPreview');
+  v.src = URL.createObjectURL(file);
+  v.classList.remove('hidden');
+  v.onloadedmetadata = ()=>{
+    document.getElementById('endTime').value = Math.min(8, +v.duration.toFixed(1));
+    document.getElementById('videoSettings').style.display = '';
   };
-  videoDrop.querySelector('.drop-title').textContent=file.name;
-  videoDrop.querySelector('.drop-hint').textContent='Click to change video';
+  videoDrop.querySelector('.drop-title').textContent = file.name;
+  videoDrop.querySelector('.drop-hint').textContent   = 'Click to change video';
 }
 
-function convertVideo(){
-  if(!videoFile){showToast('Please upload a video first');return;}
-  const start=+document.getElementById('startTime').value||0;
-  let end=+document.getElementById('endTime').value||3;
-  const fps=+document.getElementById('fps').value||10;
-  const w=+document.getElementById('outputWidth').value||320;
-  const speed=+document.getElementById('speed').value||1;
-  if(end<=start){showToast('End time must be greater than start time');return;}
-  if(end-start>10){end=start+10;showToast('Max 10 seconds for best results');}
+function setVideoProgress(pct, text){
+  document.getElementById('videoProgressBar').style.width = pct+'%';
+  document.getElementById('videoProgressPct').textContent  = pct+'%';
+  document.getElementById('videoProgressText').textContent = text;
+}
+
+async function convertVideo(){
+  if(!videoFile){showToast('Please upload a video first'); return;}
+  const start  = +document.getElementById('startTime').value || 0;
+  let   end    = +document.getElementById('endTime').value   || 3;
+  const fps    = +document.getElementById('fps').value       || 10;
+  const w      = +document.getElementById('outputWidth').value || 320;
+  const speed  = +document.getElementById('speed').value     || 1;
+  if(end <= start){showToast('End time must be greater than start time'); return;}
+  if(end - start > 8){end = start+8; showToast('Max 8 seconds');}
 
   document.getElementById('videoProgress').classList.remove('hidden');
-  document.getElementById('videoSettings').style.display='none';
-  document.getElementById('convertVideoBtn').disabled=true;
-  setVideoProgress(5,'Extracting frames from video…');
+  document.getElementById('videoSettings').style.display = 'none';
+  document.getElementById('convertVideoBtn').disabled = true;
+  setVideoProgress(5, 'Loading video…');
 
-  const duration=end-start;
-  const totalFrames=Math.round(duration*fps);
-  const frameDelay=Math.round((1000/fps)/speed);
-  const video=document.createElement('video');
-  video.src=URL.createObjectURL(videoFile);
-  video.muted=true;video.playsInline=true;
+  try {
+    const canvases = await captureVideoFrames(videoFile, start, end, fps, w, speed);
+    setVideoProgress(80, 'Encoding GIF…');
+    const duration = end - start;
+    const delayMs  = Math.round((1000/fps)/speed);
+    const loop = 0;
+    const blob = encodeFramesToGIF(canvases, w, canvases[0] ? canvases[0].height : w, delayMs, loop);
+    setVideoProgress(100, 'Done!');
+    const url = URL.createObjectURL(blob);
+    showVideoResult(url, w, canvases[0] ? canvases[0].height : w, canvases.length, blob.size);
+  } catch(err){
+    showToast('Error: ' + err.message);
+    resetVideoProgress();
+  }
+}
+</script>
 
-  video.addEventListener('loadedmetadata',()=>{
-    const natW=video.videoWidth,natH=video.videoHeight;
-    const h=Math.round(natH*(w/natW));
-    const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
-    const ctx=canvas.getContext('2d');
-    const frames=[];
-    let idx=0;
+<script>
+// Capture video frames by seeking frame-by-frame with a small delay between seeks
+function captureVideoFrames(file, startTime, endTime, fps, outWidth, speed) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = 'auto';
+    video.src = URL.createObjectURL(file);
 
-    function seekNext(){
-      if(idx>=totalFrames){encodeFrames(frames,w,h,frameDelay);return;}
-      setVideoProgress(5+Math.round((idx/totalFrames)*60),`Frame ${idx+1}/${totalFrames}…`);
-      video.currentTime=start+(idx/fps);
-    }
+    video.addEventListener('error', ()=> reject(new Error('Video load failed')));
+    video.addEventListener('loadedmetadata', ()=>{
+      const natH   = video.videoHeight;
+      const natW   = video.videoWidth;
+      const outH   = Math.round(natH * (outWidth / natW));
+      const interval = 1 / fps;
+      const totalFrames = Math.max(1, Math.ceil((endTime - startTime) * fps));
+      const frames = [];
+      let idx = 0;
 
-    video.addEventListener('seeked',function(){
-      ctx.drawImage(video,0,0,w,h);
-      frames.push(canvas.toDataURL('image/jpeg',0.8));
-      idx++;
-      setTimeout(seekNext,0);
+      function seekNext(){
+        if(idx >= totalFrames){ resolve(frames); return; }
+        const t = startTime + idx * interval;
+        video.currentTime = Math.min(t, endTime - 0.001);
+        setVideoProgress(5 + Math.round((idx / totalFrames) * 70), `Frame ${idx+1}/${totalFrames}…`);
+      }
+
+      video.addEventListener('seeked', function onSeeked(){
+        const c = drawToCanvas(video, outWidth, outH);
+        frames.push(c);
+        idx++;
+        // Small timeout lets the browser breathe between seeks
+        setTimeout(seekNext, 30);
+      });
+
+      // Kick off
+      seekNext();
     });
-
-    video.onseeked=null;
-    video.currentTime=start+(idx/fps);
-    seekNext();
-  });
-  video.load();
-}
-
-function encodeFrames(frames,w,h,delay){
-  setVideoProgress(70,'Encoding GIF…');
-  gifshot.createGIF({
-    gifWidth:w,gifHeight:h,
-    images:frames,
-    interval:delay/1000,
-    numWorkers:2,
-    progressCallback:p=>{setVideoProgress(70+Math.round(p*28),`Encoding… ${Math.round(p*100)}%`)}
-  },obj=>{
-    if(obj.error){showToast('Error: '+obj.errorMsg);resetVideoProgress();return;}
-    setVideoProgress(100,'Done!');
-    showVideoResult(obj.image,w,h);
+    video.load();
   });
 }
 
-function setVideoProgress(pct,text){
-  document.getElementById('videoProgressBar').style.width=pct+'%';
-  document.getElementById('videoProgressPct').textContent=pct+'%';
-  document.getElementById('videoProgressText').textContent=text;
-}
-function showVideoResult(dataUrl,w,h){
-  const img=document.getElementById('videoGifPreview');img.src=dataUrl;
-  const dl=document.getElementById('videoDownloadBtn');dl.href=dataUrl;dl.download='flow-video.gif';
-  document.getElementById('videoGifMeta').textContent=`${w}×${h}px`;
+function showVideoResult(url, w, h, frameCount, size){
+  const img  = document.getElementById('videoGifPreview');
+  img.src    = url;
+  const dl   = document.getElementById('videoDownloadBtn');
+  dl.href    = url;
+  dl.download = 'flow-video.gif';
+  const kb = (size/1024).toFixed(0);
+  document.getElementById('videoGifMeta').textContent = `${w}×${h}px · ${frameCount} frames · ${kb} KB`;
   document.getElementById('videoProgress').classList.add('hidden');
   document.getElementById('videoResult').classList.remove('hidden');
 }
-function resetVideoProgress(){document.getElementById('videoProgress').classList.add('hidden');document.getElementById('videoSettings').style.display='';document.getElementById('convertVideoBtn').disabled=false}
-function resetVideo(){videoFile=null;document.getElementById('videoPreview').classList.add('hidden');document.getElementById('videoPreview').src='';document.getElementById('videoSettings').style.display='none';document.getElementById('videoResult').classList.add('hidden');document.getElementById('videoProgress').classList.add('hidden');document.getElementById('videoDrop').querySelector('.drop-title').textContent='Drop a video here';document.getElementById('videoDrop').querySelector('.drop-hint').textContent='MP4, WebM, MOV · click or drag & drop';document.getElementById('videoInput').value='';document.getElementById('convertVideoBtn').disabled=false}
 
+function resetVideoProgress(){
+  document.getElementById('videoProgress').classList.add('hidden');
+  document.getElementById('videoSettings').style.display = '';
+  document.getElementById('convertVideoBtn').disabled = false;
+}
+
+function resetVideo(){
+  videoFile = null;
+  const v = document.getElementById('videoPreview');
+  v.classList.add('hidden'); v.src = '';
+  document.getElementById('videoSettings').style.display = 'none';
+  document.getElementById('videoResult').classList.add('hidden');
+  document.getElementById('videoProgress').classList.add('hidden');
+  videoDrop.querySelector('.drop-title').textContent = 'Drop a video here';
+  videoDrop.querySelector('.drop-hint').textContent  = 'MP4, WebM, MOV · click or drag & drop';
+  document.getElementById('videoInput').value = '';
+  document.getElementById('convertVideoBtn').disabled = false;
+}
+</script>
+
+<script>
 // ══ IMAGES TO GIF ══
-let imageFiles=[];
-const imagesDrop=document.getElementById('imagesDrop');
-const imagesInput=document.getElementById('imagesInput');
+let imageFiles = [];
+const imagesDrop  = document.getElementById('imagesDrop');
+const imagesInput = document.getElementById('imagesInput');
 
-imagesDrop.addEventListener('dragover',e=>{e.preventDefault();imagesDrop.classList.add('drag-over')});
-imagesDrop.addEventListener('dragleave',()=>imagesDrop.classList.remove('drag-over'));
-imagesDrop.addEventListener('drop',e=>{e.preventDefault();imagesDrop.classList.remove('drag-over');const files=[...e.dataTransfer.files].filter(f=>f.type.match(/image\/(jpeg|png|webp)/));if(files.length)addImages(files);else showToast('Please drop image files')});
-imagesInput.addEventListener('change',e=>{const files=[...e.target.files].filter(f=>f.type.match(/image\/(jpeg|png|webp)/));if(files.length)addImages(files);e.target.value=''});
+imagesDrop.addEventListener('dragover', e=>{e.preventDefault();imagesDrop.classList.add('drag-over')});
+imagesDrop.addEventListener('dragleave', ()=>imagesDrop.classList.remove('drag-over'));
+imagesDrop.addEventListener('drop', e=>{
+  e.preventDefault(); imagesDrop.classList.remove('drag-over');
+  const files=[...e.dataTransfer.files].filter(f=>f.type.match(/image\/(jpeg|png|webp)/));
+  if(files.length) addImages(files); else showToast('Please drop image files');
+});
+imagesInput.addEventListener('change', e=>{
+  const files=[...e.target.files].filter(f=>f.type.match(/image\/(jpeg|png|webp)/));
+  if(files.length) addImages(files);
+  e.target.value='';
+});
 
-function addImages(files){files.forEach(f=>imageFiles.push({file:f,url:URL.createObjectURL(f),name:f.name}));renderThumbs()}
+function addImages(files){ files.forEach(f=>imageFiles.push({file:f,url:URL.createObjectURL(f),name:f.name})); renderThumbs(); }
+
 function renderThumbs(){
-  const c=document.getElementById('imgThumbs');c.innerHTML='';
+  const c=document.getElementById('imgThumbs'); c.innerHTML='';
   imageFiles.forEach((item,i)=>{
-    const div=document.createElement('div');div.className='thumb-item';
+    const div=document.createElement('div'); div.className='thumb-item';
     div.innerHTML=`<img src="${item.url}" loading="lazy"/><div class="thumb-controls"><span>${i+1}</span><div class="thumb-btns"><button class="thumb-btn" onclick="moveImg(${i},-1)">↑</button><button class="thumb-btn" onclick="moveImg(${i},1)">↓</button><button class="thumb-btn del" onclick="removeImg(${i})">✕</button></div></div>`;
     c.appendChild(div);
   });
-  document.getElementById('imgSettings').style.display=imageFiles.length>0?'':'none';
-  if(imageFiles.length>0){imagesDrop.querySelector('.drop-title').textContent=imageFiles.length+' image'+(imageFiles.length>1?'s':'')+' selected';imagesDrop.querySelector('.drop-hint').textContent='Click or drop to add more'}
-  else{imagesDrop.querySelector('.drop-title').textContent='Drop images here';imagesDrop.querySelector('.drop-hint').textContent='JPG, PNG, WEBP · multiple files'}
+  document.getElementById('imgSettings').style.display = imageFiles.length>0 ? '' : 'none';
+  if(imageFiles.length>0){
+    imagesDrop.querySelector('.drop-title').textContent = imageFiles.length+' image'+(imageFiles.length>1?'s':'')+' selected';
+    imagesDrop.querySelector('.drop-hint').textContent  = 'Click or drop to add more';
+  } else {
+    imagesDrop.querySelector('.drop-title').textContent = 'Drop images here';
+    imagesDrop.querySelector('.drop-hint').textContent  = 'JPG, PNG, WEBP · multiple files';
+  }
 }
-function moveImg(i,d){const n=i+d;if(n<0||n>=imageFiles.length)return;[imageFiles[i],imageFiles[n]]=[imageFiles[n],imageFiles[i]];renderThumbs()}
-function removeImg(i){URL.revokeObjectURL(imageFiles[i].url);imageFiles.splice(i,1);renderThumbs()}
 
-function convertImages(){
-  if(imageFiles.length<2){showToast('Please add at least 2 images');return;}
-  const delay=+document.getElementById('frameDelay').value||300;
-  const w=+document.getElementById('imgOutputWidth').value||320;
-  const loop=+document.getElementById('imgLoop').value||0;
+function moveImg(i,d){ const n=i+d; if(n<0||n>=imageFiles.length)return; [imageFiles[i],imageFiles[n]]=[imageFiles[n],imageFiles[i]]; renderThumbs(); }
+function removeImg(i){ URL.revokeObjectURL(imageFiles[i].url); imageFiles.splice(i,1); renderThumbs(); }
+
+function setImgProgress(pct,text){
+  document.getElementById('imgProgressBar').style.width  = pct+'%';
+  document.getElementById('imgProgressPct').textContent  = pct+'%';
+  document.getElementById('imgProgressText').textContent = text;
+}
+
+async function convertImages(){
+  if(imageFiles.length<2){showToast('Please add at least 2 images'); return;}
+  const delay  = +document.getElementById('frameDelay').value    || 300;
+  const w      = +document.getElementById('imgOutputWidth').value || 320;
+  const loop   = +document.getElementById('imgLoop').value;
 
   document.getElementById('imagesProgress').classList.remove('hidden');
-  document.getElementById('imgSettings').style.display='none';
-  document.getElementById('convertImagesBtn').disabled=true;
-  setImgProgress(10,'Loading images…');
+  document.getElementById('imgSettings').style.display = 'none';
+  document.getElementById('convertImagesBtn').disabled = true;
+  setImgProgress(5, 'Loading images…');
 
-  // Convert files to data URLs for gifshot
-  const dataUrls=[];let loaded=0;
-  imageFiles.forEach((item,i)=>{
-    const reader=new FileReader();
-    reader.onload=e=>{dataUrls[i]=e.target.result;loaded++;
-      setImgProgress(10+Math.round((loaded/imageFiles.length)*30),`Loading ${loaded}/${imageFiles.length}…`);
-      if(loaded===imageFiles.length){
-        setImgProgress(45,'Encoding GIF…');
-        gifshot.createGIF({
-          gifWidth:w,gifHeight:w, // gifshot uses square — we override with aspect ratio below
-          images:dataUrls,
-          interval:delay/1000,
-          numWorkers:2,
-          progressCallback:p=>{setImgProgress(45+Math.round(p*50),`Encoding… ${Math.round(p*100)}%`)}
-        },obj=>{
-          if(obj.error){showToast('Error: '+obj.errorMsg);resetImagesProgress();return;}
-          setImgProgress(100,'Done!');
-          showImagesResult(obj.image,w);
-        });
-      }
-    };
-    reader.readAsDataURL(item.file);
-  });
+  try {
+    // Load all images into Image objects
+    const imgs = await Promise.all(imageFiles.map((item,i)=> new Promise((res,rej)=>{
+      const img=new Image(); img.onload=()=>res(img); img.onerror=rej; img.src=item.url;
+    })));
+
+    setImgProgress(30, 'Drawing frames…');
+
+    // Determine height from first image, maintain aspect ratio
+    const firstImg = imgs[0];
+    const h = Math.round(firstImg.naturalHeight * (w / firstImg.naturalWidth));
+
+    // Draw each image to a canvas
+    const canvases = imgs.map((img,i)=>{
+      setImgProgress(30 + Math.round((i/imgs.length)*40), `Frame ${i+1}/${imgs.length}…`);
+      return drawToCanvas(img, w, h);
+    });
+
+    setImgProgress(75, 'Encoding GIF…');
+    const blob = encodeFramesToGIF(canvases, w, h, delay, loop);
+    setImgProgress(100, 'Done!');
+
+    const url = URL.createObjectURL(blob);
+    showImagesResult(url, w, h, canvases.length, blob.size);
+  } catch(err){
+    showToast('Error: ' + err.message);
+    resetImagesProgress();
+  }
 }
 
-function setImgProgress(pct,text){document.getElementById('imgProgressBar').style.width=pct+'%';document.getElementById('imgProgressPct').textContent=pct+'%';document.getElementById('imgProgressText').textContent=text}
-function showImagesResult(dataUrl,w){
-  document.getElementById('imagesGifPreview').src=dataUrl;
-  const dl=document.getElementById('imagesDownloadBtn');dl.href=dataUrl;dl.download='flow-images.gif';
-  document.getElementById('imagesGifMeta').textContent=`${imageFiles.length} frames`;
+function showImagesResult(url, w, h, frameCount, size){
+  document.getElementById('imagesGifPreview').src = url;
+  const dl = document.getElementById('imagesDownloadBtn');
+  dl.href = url; dl.download = 'flow-images.gif';
+  const kb = (size/1024).toFixed(0);
+  document.getElementById('imagesGifMeta').textContent = `${w}×${h}px · ${frameCount} frames · ${kb} KB`;
   document.getElementById('imagesProgress').classList.add('hidden');
   document.getElementById('imagesResult').classList.remove('hidden');
 }
-function resetImagesProgress(){document.getElementById('imagesProgress').classList.add('hidden');document.getElementById('imgSettings').style.display='';document.getElementById('convertImagesBtn').disabled=false}
-function resetImages(){imageFiles.forEach(f=>URL.revokeObjectURL(f.url));imageFiles=[];renderThumbs();document.getElementById('imagesResult').classList.add('hidden');document.getElementById('imagesProgress').classList.add('hidden');document.getElementById('imgSettings').style.display='none';document.getElementById('convertImagesBtn').disabled=false;document.getElementById('imagesInput').value=''}
+
+function resetImagesProgress(){
+  document.getElementById('imagesProgress').classList.add('hidden');
+  document.getElementById('imgSettings').style.display = '';
+  document.getElementById('convertImagesBtn').disabled = false;
+}
+
+function resetImages(){
+  imageFiles.forEach(f=>URL.revokeObjectURL(f.url));
+  imageFiles = [];
+  renderThumbs();
+  document.getElementById('imagesResult').classList.add('hidden');
+  document.getElementById('imagesProgress').classList.add('hidden');
+  document.getElementById('imagesInput').value = '';
+  document.getElementById('convertImagesBtn').disabled = false;
+}
 </script>
 </body>
 </html>
