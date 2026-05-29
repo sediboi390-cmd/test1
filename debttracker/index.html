@@ -423,11 +423,25 @@ function generateSchedule(debtor) {
     const cutoff = debtor.cutoffDate
       ? new Date(debtor.cutoffDate + 'T00:00:00')
       : new Date(debtor.date + 'T00:00:00');
-    const interestPerPeriod = debtor.amount * (debtor.rate / 100);
     const maxPeriods = debtor.biweeklyTerms || 6;
+    const interestPerPeriod = debtor.amount * (debtor.rate / 100);
+    const capitalPerTerm = debtor.amount / maxPeriods;
+    const paymentPerTerm = capitalPerTerm + interestPerPeriod;
+    const paid = totalPaid(debtor);
     for (let i = 0; i < maxPeriods; i++) {
       const dueDate = new Date(cutoff.getTime() + i * 14 * 24 * 60 * 60 * 1000);
-      schedule.push({ term: i + 1, dueDate, interestDue: interestPerPeriod, totalInterest: interestPerPeriod * (i + 1), totalDue: interestPerPeriod * (i + 1), isPast: dueDate <= now });
+      const totalInterest = interestPerPeriod * (i + 1);
+      const totalOwed = debtor.amount + totalInterest;
+      schedule.push({
+        term: i + 1,
+        dueDate,
+        capitalDue: capitalPerTerm,
+        interestDue: interestPerPeriod,
+        paymentDue: paymentPerTerm,
+        totalInterest,
+        totalDue: Math.max(0, totalOwed - paid),
+        isPast: dueDate <= now
+      });
     }
 
   } else if (debtor.interestType === 'monthly') {
@@ -596,9 +610,9 @@ function debtorCardHTML(d) {
               <tr style="background:var(--bg)">
                 <th style="padding:6px 8px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">${colHeader}</th>
                 <th style="padding:6px 8px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Due Date</th>
-                ${(d.interestType==='monthly'||d.interestType==='yearly')?`<th style="padding:6px 8px;text-align:right;color:#3b82f6;font-weight:600;border-bottom:1px solid var(--border)">Capital</th>`:''}
+                ${(d.interestType==='monthly'||d.interestType==='yearly'||d.interestType==='biweekly')?`<th style="padding:6px 8px;text-align:right;color:#3b82f6;font-weight:600;border-bottom:1px solid var(--border)">Capital</th>`:''}
                 <th style="padding:6px 8px;text-align:right;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Interest</th>
-                ${(d.interestType==='monthly'||d.interestType==='yearly')?`<th style="padding:6px 8px;text-align:right;color:#10b981;font-weight:600;border-bottom:1px solid var(--border)">Payment Due</th>`:''}
+                ${(d.interestType==='monthly'||d.interestType==='yearly'||d.interestType==='biweekly')?`<th style="padding:6px 8px;text-align:right;color:#10b981;font-weight:600;border-bottom:1px solid var(--border)">Payment Due</th>`:''}
                 <th style="padding:6px 8px;text-align:right;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Total Interest</th>
                 <th style="padding:6px 8px;text-align:right;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Balance Due</th>
                 <th style="padding:6px 8px;text-align:center;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Status</th>
@@ -629,9 +643,9 @@ function debtorCardHTML(d) {
             <tfoot>
               <tr style="background:rgba(239,68,68,.06);border-top:2px solid var(--border)">
                 <td colspan="2" style="padding:8px 10px;font-size:.76rem;font-weight:700;color:var(--text)">📊 TOTAL</td>
-                ${(d.interestType==='monthly'||d.interestType==='yearly')?`<td style="padding:8px 10px;text-align:right;font-weight:700;color:#3b82f6;font-size:.82rem">${fmt(schedule.reduce((sum,r)=>sum+(r.capitalDue||0),0))}</td>`:''}
+                ${(d.interestType==='monthly'||d.interestType==='yearly'||d.interestType==='biweekly')?`<td style="padding:8px 10px;text-align:right;font-weight:700;color:#3b82f6;font-size:.82rem">${fmt(schedule.reduce((sum,r)=>sum+(r.capitalDue||0),0))}</td>`:''}
                 <td style="padding:8px 10px;text-align:right;font-weight:700;color:#f59e0b;font-size:.82rem">${fmt(schedule.reduce((sum,r)=>sum+(r.interestDue||0),0))}</td>
-                ${(d.interestType==='monthly'||d.interestType==='yearly')?`<td style="padding:8px 10px;text-align:right;font-weight:700;color:#10b981;font-size:.82rem">${fmt(schedule.reduce((sum,r)=>sum+(r.paymentDue||0),0))}</td>`:''}
+                ${(d.interestType==='monthly'||d.interestType==='yearly'||d.interestType==='biweekly')?`<td style="padding:8px 10px;text-align:right;font-weight:700;color:#10b981;font-size:.82rem">${fmt(schedule.reduce((sum,r)=>sum+(r.paymentDue||0),0))}</td>`:''}
                 <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--text);font-size:.82rem">${fmt(schedule.length?schedule[schedule.length-1].totalInterest:0)}</td>
                 <td style="padding:8px 10px;text-align:right;font-weight:800;color:var(--accent);font-size:.88rem">${fmt(d.amount+(schedule.length?schedule[schedule.length-1].totalInterest:0))}</td>
                 <td></td>
