@@ -570,8 +570,8 @@ function enforceAspectRatio(handle) {
 // ── Render loop ────────────────────────────────────
 function render() {
   if (!img) return;
-  resizeCanvas();
-  const { dw, dh, scale } = getDisplaySize();
+  // Don't resize canvas every frame — only resize when explicitly called
+  const { dw, dh } = getDisplaySize();
 
   // Clear
   ctx.clearRect(0, 0, dw, dh);
@@ -854,38 +854,24 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 function download(format) {
   if (!img) return;
 
-  // Step 1: Create a full-size canvas that replicates exactly what is
-  // drawn on the main canvas (same transforms, same scale).
-  const fullCanvas = document.createElement('canvas');
-  fullCanvas.width  = canvas.width;
-  fullCanvas.height = canvas.height;
-  const fc = fullCanvas.getContext('2d');
+  // The simplest and most accurate approach:
+  // The main canvas already renders the image exactly as the user sees it.
+  // Just copy the crop rectangle directly from the live canvas — no re-render needed.
+  const cw = Math.round(cropW);
+  const ch = Math.round(cropH);
+  if (cw < 1 || ch < 1) return;
 
-  const swapped = rotation === 90 || rotation === 270;
-  const dw = canvas.width;
-  const dh = canvas.height;
-  const s = Math.min(1, dw / (swapped ? origH : origW), dh / (swapped ? origW : origH)) * zoom;
-
-  fc.save();
-  fc.translate(dw / 2, dh / 2);
-  fc.rotate(rotation * Math.PI / 180);
-  fc.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-  fc.drawImage(img, -origW * s / 2, -origH * s / 2, origW * s, origH * s);
-  fc.restore();
-
-  // Step 2: Extract exactly the crop rectangle from the full canvas.
-  // cropX/cropY/cropW/cropH are already in canvas pixel coordinates.
   const off = document.createElement('canvas');
-  off.width  = Math.round(cropW);
-  off.height = Math.round(cropH);
+  off.width  = cw;
+  off.height = ch;
   const oc = off.getContext('2d');
 
   oc.drawImage(
-    fullCanvas,
-    Math.round(cropX), Math.round(cropY),   // source x, y
-    Math.round(cropW), Math.round(cropH),   // source w, h
-    0, 0,                                    // dest x, y
-    Math.round(cropW), Math.round(cropH)    // dest w, h
+    canvas,
+    Math.round(cropX), Math.round(cropY),  // source x,y on main canvas
+    cw, ch,                                 // source w,h
+    0, 0,                                   // dest x,y
+    cw, ch                                  // dest w,h
   );
 
   const mime    = format === 'jpg' ? 'image/jpeg' : 'image/png';
