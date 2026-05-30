@@ -14,7 +14,7 @@ such as "Sold Out", stock numbers, and price data.
 """
 
 from scrapling.fetchers import Fetcher
-import json, os, re, smtplib, sys, subprocess, threading
+import json, os, re, smtplib, sys, subprocess, threading, urllib.request, urllib.parse
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
@@ -29,6 +29,9 @@ HISTORY_FILE   = "shopee_restock_history.json"
 EMAIL_SENDER   = "sediboi390@gmail.com"
 EMAIL_PASSWORD = "zsdwrlbrvjqjlthe"   # App password
 EMAIL_RECEIVER = "sediboi390@gmail.com"
+
+# Pushbullet config
+PUSHBULLET_TOKEN = "o.agbesjAzlZdQFUVWmgS35YqPh9EHlotu"
 # ────────────────────────────────────────────────────
 
 def check_stock():
@@ -142,6 +145,32 @@ def save_and_compare(result):
     elif not prev:
         return 'FIRST_CHECK'
     return 'NO_CHANGE'
+
+
+def send_pushbullet_alert(product_name, variant, url):
+    """Send push notification to phone via Pushbullet"""
+    print("📱 Sending Pushbullet notification...")
+    try:
+        data = json.dumps({
+            "type":  "link",
+            "title": f"🚨 Shopee Restock! {product_name}",
+            "body":  f"✅ {variant} is BACK IN STOCK!\nTap to buy now!",
+            "url":   url
+        }).encode('utf-8')
+
+        req = urllib.request.Request(
+            'https://api.pushbullet.com/v2/pushes',
+            data=data,
+            headers={
+                'Access-Token': PUSHBULLET_TOKEN,
+                'Content-Type': 'application/json'
+            },
+            method='POST'
+        )
+        urllib.request.urlopen(req, timeout=10)
+        print("✅ Pushbullet notification sent to your phone!")
+    except Exception as e:
+        print(f"❌ Pushbullet failed: {e}")
 
 
 def send_popup_alert(product_name, variant, url):
@@ -276,6 +305,7 @@ def print_result(result, change):
         print("\n🚨🚨🚨 RESTOCK ALERT! 🚨🚨🚨")
         print(f"✅ '{result['name']}' — {result['variant']} is BACK IN STOCK!")
         print(f"🛒 Buy now: {result['url']}")
+        send_pushbullet_alert(result['name'], result['variant'], result['url'])
         send_popup_alert(result['name'], result['variant'], result['url'])
         send_email_alert(result['name'], result['variant'], result['url'])
     elif change == 'OUT_OF_STOCK':
