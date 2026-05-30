@@ -2,7 +2,7 @@ name: Shopee Restock Tracker
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Every hour
+    - cron: '*/30 * * * *'  # Every 30 minutes
   workflow_dispatch:       # Allow manual run
 
 jobs:
