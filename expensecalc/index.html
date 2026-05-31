@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Expense Calculator — Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --border: #e5e2da;
+  --text: #1e1e1e;
+  --muted: #888580;
+  --radius: 14px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-hover: 0 6px 24px rgba(0,0,0,0.10);
+  --accent: #f59e0b;
+  --accent-light: #fef3c7;
+  --accent-dark: #d97706;
+}
+html.dark {
+  --bg: #111113;
+  --surface: #1c1c1f;
+  --border: #2a2a2e;
+  --text: #ececef;
+  --muted: #7a7a82;
+  --accent-light: rgba(245,158,11,0.12);
+}
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+</style>
+
+
+/* ── Layout ── */
+.page-wrap { max-width: 900px; margin: 0 auto; padding: 0 20px 80px; }
+
+/* ── Header ── */
+.top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+  padding: 36px 0 24px;
+}
+.back-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.82rem; font-weight: 500; color: var(--muted);
+  text-decoration: none; padding: 6px 12px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); transition: all 0.15s;
+}
+.back-btn:hover { color: var(--accent); border-color: var(--accent); }
+.header-center { display: flex; align-items: center; gap: 10px; flex: 1; justify-content: center; }
+.app-icon-h { font-size: 1.8rem; }
+.app-title { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.btn-icon {
+  width: 36px; height: 36px; border-radius: 9px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); cursor: pointer; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Currency + Controls bar ── */
+.controls-bar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  margin-bottom: 20px;
+}
+.currency-sel-wrap { display: flex; align-items: center; gap: 8px; }
+.currency-sel-wrap label { font-size: 0.82rem; font-weight: 500; color: var(--muted); }
+select, input[type="text"], input[type="number"] {
+  font-family: inherit; font-size: 0.88rem; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 9px; padding: 8px 11px; outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+select:focus, input[type="text"]:focus, input[type="number"]:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+}
+select { cursor: pointer; padding-right: 28px; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; }
+
+.search-wrap { flex: 1; min-width: 160px; position: relative; }
+.search-wrap input { width: 100%; padding-left: 34px; }
+.search-icon {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: 0.85rem; pointer-events: none;
+}
+.sort-wrap { display: flex; align-items: center; gap: 6px; }
+.sort-wrap label { font-size: 0.82rem; color: var(--muted); }
+
+
+/* ── Add Item Form ── */
+.form-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow); margin-bottom: 20px;
+}
+.form-card h3 { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+.form-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.form-field { display: flex; flex-direction: column; gap: 5px; }
+.form-field label { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
+.form-field.grow { flex: 1; min-width: 120px; }
+.form-field input, .form-field select { width: 100%; }
+.form-field.w80 input { width: 80px; }
+.form-field.w100 input { width: 100px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font: 500 0.85rem/1 inherit; padding: 9px 16px;
+  border-radius: 9px; border: 1px solid transparent; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+.btn-outline { background: var(--surface); color: var(--text); border-color: var(--border); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-ghost { background: transparent; color: var(--muted); border-color: transparent; padding: 6px 10px; }
+.btn-ghost:hover { color: var(--accent); background: var(--accent-light); }
+.btn-danger { background: transparent; color: #ef4444; border-color: transparent; padding: 6px 10px; }
+.btn-danger:hover { background: #fee2e2; border-color: #fca5a5; }
+
+/* ── Quick Add Chips ── */
+.quick-add { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.quick-add-label { font-size: 0.73rem; color: var(--muted); font-weight: 500; padding-top: 2px; }
+.chip {
+  font-size: 0.73rem; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text); cursor: pointer; transition: all 0.13s;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+/* ── Category Sections ── */
+.items-section { margin-bottom: 20px; }
+.cat-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0 8px 4px; margin-bottom: 6px;
+}
+.cat-badge {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 999px;
+}
+.cat-label { font-size: 0.9rem; font-weight: 600; }
+.cat-subtotal { margin-left: auto; font-size: 0.88rem; font-weight: 600; color: var(--accent); }
+
+/* ── Items Table ── */
+.items-table { width: 100%; border-collapse: collapse; }
+.items-table th {
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--muted);
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+  text-align: left; background: var(--surface);
+}
+.items-table th:last-child { text-align: right; }
+.items-table th.num { text-align: right; }
+.items-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  transition: background 0.12s;
+}
+.items-table tbody tr:hover { background: var(--accent-light); }
+.items-table td { padding: 10px 12px; font-size: 0.86rem; vertical-align: middle; }
+.items-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.items-table td.actions { text-align: right; white-space: nowrap; }
+.item-num { color: var(--muted); font-size: 0.78rem; font-weight: 500; }
+.item-name { font-weight: 500; }
+td.edit-input input { font-size: 0.85rem; padding: 4px 8px; border-radius: 6px; }
+
+
+/* ── Grand Total Bar ── */
+.grand-total-bar {
+  background: var(--surface); border: 2px solid var(--accent);
+  border-radius: var(--radius); padding: 18px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; margin: 24px 0;
+  box-shadow: 0 4px 20px rgba(245,158,11,0.12);
+}
+.grand-total-bar .gt-label { font-size: 0.82rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.grand-total-bar .gt-count { font-size: 0.82rem; color: var(--muted); }
+.grand-total-bar .gt-amount {
+  font-size: 2rem; font-weight: 700; color: var(--accent);
+  letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+}
+
+/* ── Action Buttons ── */
+.action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center; padding: 60px 20px;
+  color: var(--muted); display: none;
+  background: var(--surface); border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+.empty-state .es-icon { font-size: 2.5rem; margin-bottom: 10px; }
+.empty-state p { font-size: 0.88rem; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #1e1e1e; color: #fff; font-size: 0.83rem; font-weight: 500;
+  padding: 10px 20px; border-radius: 999px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 999; white-space: nowrap;
+}
+html.dark .toast { background: #ececef; color: #1e1e1e; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Category colors ── */
+.cat-food    { background: #fef3c7; color: #92400e; }
+.cat-transport { background: #dbeafe; color: #1e40af; }
+.cat-utilities { background: #d1fae5; color: #065f46; }
+.cat-shopping { background: #ede9fe; color: #5b21b6; }
+.cat-entertainment { background: #fce7f3; color: #9d174d; }
+.cat-health  { background: #dcfce7; color: #14532d; }
+.cat-other   { background: #f3f4f6; color: #374151; }
+.cat-custom  { background: #cffafe; color: #155e75; }
+
+html.dark .cat-food    { background: rgba(245,158,11,0.15); color: #fbbf24; }
+html.dark .cat-transport { background: rgba(59,130,246,0.15); color: #60a5fa; }
+html.dark .cat-utilities { background: rgba(16,185,129,0.15); color: #34d399; }
+html.dark .cat-shopping { background: rgba(139,92,246,0.15); color: #a78bfa; }
+html.dark .cat-entertainment { background: rgba(236,72,153,0.15); color: #f472b6; }
+html.dark .cat-health  { background: rgba(34,197,94,0.15); color: #4ade80; }
+html.dark .cat-other   { background: rgba(107,114,128,0.15); color: #9ca3af; }
+html.dark .cat-custom  { background: rgba(6,182,212,0.15); color: #22d3ee; }
+
+/* ── Responsive ── */
+@media (max-width: 620px) {
+  .top-bar { padding: 20px 0 16px; }
+  .form-row { flex-direction: column; }
+  .form-field.w80 input, .form-field.w100 input { width: 100%; }
+  .items-table th:nth-child(4),
+  .items-table td:nth-child(4) { display: none; }
+  .grand-total-bar .gt-amount { font-size: 1.5rem; }
+}
+</style>
+</head>
+
+<body>
+<div class="page-wrap">
+
+  <!-- ── Top Bar ── -->
+  <div class="top-bar">
+    <a href="../" class="back-btn">← Back</a>
+    <div class="header-center">
+      <span class="app-icon-h">🧮</span>
+      <span class="app-title">Expense Calculator</span>
+    </div>
+    <div class="header-right">
+      <button class="btn-icon" id="darkToggle" title="Toggle dark mode">🌙</button>
+    </div>
+  </div>
+
+  <!-- ── Controls Bar ── -->
+  <div class="controls-bar">
+    <div class="currency-sel-wrap">
+      <label for="currencySel">Currency</label>
+      <select id="currencySel">
+        <option value="PHP" data-sym="₱">PHP — Philippine Peso</option>
+        <option value="USD" data-sym="$">USD — US Dollar</option>
+        <option value="EUR" data-sym="€">EUR — Euro</option>
+        <option value="GBP" data-sym="£">GBP — British Pound</option>
+        <option value="JPY" data-sym="¥">JPY — Japanese Yen</option>
+        <option value="AUD" data-sym="A$">AUD — Australian Dollar</option>
+        <option value="CAD" data-sym="C$">CAD — Canadian Dollar</option>
+        <option value="SGD" data-sym="S$">SGD — Singapore Dollar</option>
+        <option value="KRW" data-sym="₩">KRW — Korean Won</option>
+        <option value="CNY" data-sym="¥">CNY — Chinese Yuan</option>
+        <option value="INR" data-sym="₹">INR — Indian Rupee</option>
+        <option value="MXN" data-sym="$">MXN — Mexican Peso</option>
+        <option value="BRL" data-sym="R$">BRL — Brazilian Real</option>
+        <option value="AED" data-sym="د.إ">AED — UAE Dirham</option>
+        <option value="CHF" data-sym="Fr">CHF — Swiss Franc</option>
+      </select>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search items…" autocomplete="off"/>
+    </div>
+    <div class="sort-wrap">
+      <label for="sortSel">Sort</label>
+      <select id="sortSel">
+        <option value="added">Date Added</option>
+        <option value="name">Name A–Z</option>
+        <option value="price_asc">Price Low–High</option>
+        <option value="price_desc">Price High–Low</option>
+        <option value="category">Category</option>
+        <option value="subtotal_desc">Subtotal High–Low</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ── Add Item Form ── -->
+  <div class="form-card">
+    <h3>Add Item</h3>
+    <div class="form-row">
+      <div class="form-field grow">
+        <label for="fName">Name / Label</label>
+        <input type="text" id="fName" placeholder="e.g. Rice, Bus fare…" autocomplete="off"/>
+      </div>
+      <div class="form-field">
+        <label for="fCategory">Category</label>
+        <select id="fCategory">
+          <option value="Food">🍔 Food</option>
+          <option value="Transport">🚌 Transport</option>
+          <option value="Utilities">💡 Utilities</option>
+          <option value="Shopping">🛍️ Shopping</option>
+          <option value="Entertainment">🎭 Entertainment</option>
+          <option value="Health">💊 Health</option>
+          <option value="Other">📦 Other</option>
+          <option value="__custom__">＋ Custom…</option>
+        </select>
+      </div>
+      <div class="form-field" id="customCatWrap" style="display:none">
+        <label for="fCustomCat">Custom Category</label>
+        <input type="text" id="fCustomCat" placeholder="Enter category…"/>
+      </div>
+      <div class="form-field w100">
+        <label for="fPrice">Price</label>
+        <input type="number" id="fPrice" placeholder="0.00" min="0" step="0.01"/>
+      </div>
+      <div class="form-field w80">
+        <label for="fQty">Qty</label>
+        <input type="number" id="fQty" value="1" min="1" step="1"/>
+      </div>
+      <div class="form-field" style="padding-top:20px">
+        <button class="btn btn-primary" id="addBtn">＋ Add</button>
+      </div>
+    </div>
+    <div class="quick-add">
+      <span class="quick-add-label">Quick add:</span>
+      <span class="chip" data-name="Rice" data-cat="Food" data-price="50">🍚 Rice</span>
+      <span class="chip" data-name="Eggs (12 pcs)" data-cat="Food" data-price="120">🥚 Eggs</span>
+      <span class="chip" data-name="Bread" data-cat="Food" data-price="65">🍞 Bread</span>
+      <span class="chip" data-name="Bus Fare" data-cat="Transport" data-price="25">🚌 Bus</span>
+      <span class="chip" data-name="Tricycle" data-cat="Transport" data-price="15">🛺 Trike</span>
+      <span class="chip" data-name="Electricity" data-cat="Utilities" data-price="1200">💡 Electricity</span>
+      <span class="chip" data-name="Water Bill" data-cat="Utilities" data-price="400">💧 Water</span>
+      <span class="chip" data-name="Internet" data-cat="Utilities" data-price="1299">📡 Internet</span>
+      <span class="chip" data-name="Coffee" data-cat="Food" data-price="70">☕ Coffee</span>
+      <span class="chip" data-name="Medicine" data-cat="Health" data-price="150">💊 Medicine</span>
+    </div>
+  </div>
+
+
+  <!-- ── Items List ── -->
+  <div id="itemsSection"></div>
+
+  <!-- ── Empty State ── -->
+  <div class="empty-state" id="emptyState" style="display:block">
+    <div class="es-icon">🧮</div>
+    <p>No items yet. Add your first expense above!</p>
+  </div>
+
+  <!-- ── Grand Total Bar ── -->
+  <div class="grand-total-bar" id="grandTotalBar" style="display:none">
+    <div>
+      <div class="gt-label">Grand Total</div>
+      <div class="gt-count" id="itemCountLabel">0 items</div>
+    </div>
+    <div class="gt-amount" id="grandTotalAmt">₱0.00</div>
+  </div>
+
+  <!-- ── Action Buttons ── -->
+  <div class="action-bar" id="actionBar" style="display:none">
+    <button class="btn btn-outline" id="copyBtn">📋 Copy Summary</button>
+    <button class="btn btn-outline" id="exportBtn">⬇️ Export CSV</button>
+    <button class="btn btn-outline" id="clearBtn" style="color:#ef4444;border-color:#fca5a5">🗑️ Clear All</button>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────
+const STORAGE_KEY = 'flow.expensecalc';
+
+let items = [];
+let currency = { code: 'PHP', sym: '₱' };
+let editingId = null;
+let sortMode = 'added';
+let searchQ = '';
+
+const CATS = ['Food','Transport','Utilities','Shopping','Entertainment','Health','Other'];
+const CAT_COLORS = {
+  Food: 'cat-food', Transport: 'cat-transport', Utilities: 'cat-utilities',
+  Shopping: 'cat-shopping', Entertainment: 'cat-entertainment',
+  Health: 'cat-health', Other: 'cat-other'
+};
+
+function catClass(c) { return CAT_COLORS[c] || 'cat-custom'; }
+
+// ─────────────────────────────────────────────
+//  Persistence
+// ─────────────────────────────────────────────
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, currency, sortMode }));
+}
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    if (d) {
+      items = d.items || [];
+      if (d.currency) currency = d.currency;
+      if (d.sortMode) sortMode = d.sortMode;
+    }
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────────
+//  Formatting
+// ─────────────────────────────────────────────
+function fmt(n) {
+  return currency.sym + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ─────────────────────────────────────────────
+//  Add / Edit / Delete
+// ─────────────────────────────────────────────
+function addItem() {
+  const name = document.getElementById('fName').value.trim();
+  const catSel = document.getElementById('fCategory').value;
+  let cat = catSel === '__custom__' ? document.getElementById('fCustomCat').value.trim() : catSel;
+  const price = parseFloat(document.getElementById('fPrice').value) || 0;
+  const qty = parseInt(document.getElementById('fQty').value) || 1;
+
+  if (!name) { showToast('Please enter a name'); return; }
+  if (price <= 0) { showToast('Please enter a valid price'); return; }
+  if (catSel === '__custom__' && !cat) { showToast('Please enter a category name'); return; }
+
+  items.push({ id: Date.now(), name, cat, price, qty, added: Date.now() });
+  save();
+  render();
+  showToast('Item added ✓');
+
+  document.getElementById('fName').value = '';
+  document.getElementById('fPrice').value = '';
+  document.getElementById('fQty').value = '1';
+  document.getElementById('fName').focus();
+}
+
+function deleteItem(id) {
+  items = items.filter(i => i.id !== id);
+  save();
+  render();
+  showToast('Item removed');
+}
+
+function startEdit(id) {
+  editingId = id;
+  render();
+}
+
+function saveEdit(id) {
+  const row = document.querySelector(`tr[data-id="${id}"]`);
+  if (!row) return;
+  const nameInp = row.querySelector('.edit-name');
+  const priceInp = row.querySelector('.edit-price');
+  const qtyInp = row.querySelector('.edit-qty');
+  const catSel = row.querySelector('.edit-cat');
+
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  item.name = nameInp.value.trim() || item.name;
+  item.price = parseFloat(priceInp.value) || item.price;
+  item.qty = parseInt(qtyInp.value) || item.qty;
+  item.cat = catSel.value;
+
+  editingId = null;
+  save();
+  render();
+  showToast('Item updated ✓');
+}
+
+function cancelEdit() {
+  editingId = null;
+  render();
+}
+</script>
+
+<script>
+// ─────────────────────────────────────────────
+//  Sort & Filter
+// ─────────────────────────────────────────────
+function getVisible() {
+  let arr = items.slice();
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    arr = arr.filter(i => i.name.toLowerCase().includes(q) || i.cat.toLowerCase().includes(q));
+  }
+  switch (sortMode) {
+    case 'name':         arr.sort((a,b) => a.name.localeCompare(b.name)); break;
+    case 'price_asc':    arr.sort((a,b) => a.price - b.price); break;
+    case 'price_desc':   arr.sort((a,b) => b.price - a.price); break;
+    case 'category':     arr.sort((a,b) => a.cat.localeCompare(b.cat)); break;
+    case 'subtotal_desc':arr.sort((a,b) => (b.price*b.qty) - (a.price*a.qty)); break;
+    default:             arr.sort((a,b) => a.added - b.added);
+  }
+  return arr;
+}
+
+// ─────────────────────────────────────────────
+//  Render
+// ─────────────────────────────────────────────
+function render() {
+  const sec = document.getElementById('itemsSection');
+  const empty = document.getElementById('emptyState');
+  const totalBar = document.getElementById('grandTotalBar');
+  const actionBar = document.getElementById('actionBar');
+  const totalAmt = document.getElementById('grandTotalAmt');
+  const countLbl = document.getElementById('itemCountLabel');
+
+  const visible = getVisible();
+  sec.innerHTML = '';
+
+  if (items.length === 0) {
+    empty.style.display = 'block';
+    totalBar.style.display = 'none';
+    actionBar.style.display = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  totalBar.style.display = 'flex';
+  actionBar.style.display = 'flex';
+
+  // Group by category
+  const groups = {};
+  visible.forEach(item => {
+    if (!groups[item.cat]) groups[item.cat] = [];
+    groups[item.cat].push(item);
+  });
+
+  // Global counter for item numbers (across categories)
+  let rowNum = 0;
+
+  Object.keys(groups).sort().forEach(cat => {
+    const catItems = groups[cat];
+    const catTotal = catItems.reduce((s, i) => s + i.price * i.qty, 0);
+    const cls = catClass(cat);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'items-section';
+
+    // Category header
+    const header = document.createElement('div');
+    header.className = 'cat-header';
+    header.innerHTML = `
+      <span class="cat-badge ${cls}">${cat}</span>
+      <span class="cat-label">${cat}</span>
+      <span class="cat-subtotal">${fmt(catTotal)}</span>
+    `;
+    wrap.appendChild(header);
+
+    // Table
+    const tbl = document.createElement('table');
+    tbl.className = 'items-table';
+    tbl.innerHTML = `<thead><tr>
+      <th style="width:36px">#</th>
+      <th>Name</th>
+      <th>Price</th>
+      <th class="num">Qty</th>
+      <th class="num">Subtotal</th>
+      <th class="num">Actions</th>
+    </tr></thead>`;
+    const tbody = document.createElement('tbody');
+
+    catItems.forEach(item => {
+      rowNum++;
+      const subtotal = item.price * item.qty;
+      const tr = document.createElement('tr');
+      tr.dataset.id = item.id;
+
+      if (editingId === item.id) {
+        // Edit row
+        let catOpts = CATS.map(c => `<option value="${c}" ${c===item.cat?'selected':''}>${c}</option>`).join('');
+        if (!CATS.includes(item.cat)) catOpts += `<option value="${item.cat}" selected>${item.cat}</option>`;
+        tr.innerHTML = `
+          <td class="item-num">${rowNum}</td>
+          <td class="edit-input"><input class="edit-name" value="${escHtml(item.name)}" style="width:100%"/></td>
+          <td class="edit-input"><input class="edit-price" type="number" value="${item.price}" style="width:90px"/></td>
+          <td class="edit-input num"><input class="edit-qty" type="number" value="${item.qty}" style="width:60px"/></td>
+          <td class="num edit-input"><select class="edit-cat">${catOpts}</select></td>
+          <td class="actions">
+            <button class="btn btn-primary" style="padding:5px 10px;font-size:0.78rem" onclick="saveEdit(${item.id})">✓</button>
+            <button class="btn btn-ghost" style="padding:5px 10px;font-size:0.78rem" onclick="cancelEdit()">✕</button>
+          </td>`;
+      } else {
+        tr.innerHTML = `
+          <td class="item-num">${rowNum}</td>
+          <td class="item-name">${escHtml(item.name)}</td>
+          <td class="num">${fmt(item.price)}</td>
+          <td class="num">${item.qty}</td>
+          <td class="num" style="font-weight:600">${fmt(subtotal)}</td>
+          <td class="actions">
+            <button class="btn btn-ghost" title="Edit" onclick="startEdit(${item.id})">✏️</button>
+            <button class="btn btn-danger" title="Delete" onclick="deleteItem(${item.id})">🗑</button>
+          </td>`;
+      }
+      tbody.appendChild(tr);
+    });
+
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+    sec.appendChild(wrap);
+  });
+
+  // Grand total
+  const grand = items.reduce((s, i) => s + i.price * i.qty, 0);
+  totalAmt.textContent = fmt(grand);
+  const n = items.length;
+  countLbl.textContent = `${n} item${n !== 1 ? 's' : ''}`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+
+<script>
+// ─────────────────────────────────────────────
+//  Copy Summary
+// ─────────────────────────────────────────────
+function copySummary() {
+  if (items.length === 0) { showToast('No items to copy'); return; }
+
+  const groups = {};
+  items.forEach(i => { if (!groups[i.cat]) groups[i.cat]=[]; groups[i.cat].push(i); });
+
+  let lines = [`EXPENSE SUMMARY — ${new Date().toLocaleDateString()}`, ''];
+  let globalNum = 0;
+
+  Object.keys(groups).sort().forEach(cat => {
+    lines.push(`[ ${cat.toUpperCase()} ]`);
+    const catItems = groups[cat];
+    catItems.forEach(i => {
+      globalNum++;
+      const sub = i.price * i.qty;
+      lines.push(`  ${globalNum}. ${i.name}  |  ${currency.sym}${i.price.toFixed(2)} × ${i.qty}  =  ${fmt(sub)}`);
+    });
+    const catTotal = catItems.reduce((s,i) => s + i.price*i.qty, 0);
+    lines.push(`  Subtotal: ${fmt(catTotal)}`);
+    lines.push('');
+  });
+
+  const grand = items.reduce((s,i) => s + i.price*i.qty, 0);
+  lines.push(`GRAND TOTAL: ${fmt(grand)}`);
+
+  navigator.clipboard.writeText(lines.join('\n'))
+    .then(() => showToast('Summary copied to clipboard ✓'))
+    .catch(() => showToast('Copy failed'));
+}
+
+// ─────────────────────────────────────────────
+//  Export CSV
+// ─────────────────────────────────────────────
+function exportCSV() {
+  if (items.length === 0) { showToast('No items to export'); return; }
+
+  const headers = ['#','Name','Category','Price','Qty','Subtotal','Currency'];
+  const rows = items.map((i, idx) => [
+    idx + 1,
+    `"${i.name.replace(/"/g,'""')}"`,
+    `"${i.cat}"`,
+    i.price.toFixed(2),
+    i.qty,
+    (i.price * i.qty).toFixed(2),
+    currency.code
+  ]);
+
+  const grand = items.reduce((s,i) => s + i.price*i.qty, 0);
+  rows.push(['','','','','','','']);
+  rows.push(['','GRAND TOTAL','','','',grand.toFixed(2),currency.code]);
+
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `expenses_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV downloaded ✓');
+}
+
+// ─────────────────────────────────────────────
+//  Clear All
+// ─────────────────────────────────────────────
+function clearAll() {
+  if (items.length === 0) return;
+  if (!confirm(`Clear all ${items.length} item(s)? This cannot be undone.`)) return;
+  items = [];
+  editingId = null;
+  save();
+  render();
+  showToast('All items cleared');
+}
+
+// ─────────────────────────────────────────────
+//  Toast
+// ─────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ─────────────────────────────────────────────
+//  Wire up events
+// ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  load();
+
+  // Dark mode
+  const html = document.documentElement;
+  const darkBtn = document.getElementById('darkToggle');
+  const saved = localStorage.getItem('flow.darkMode');
+  if (saved === 'true' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    html.classList.add('dark'); darkBtn.textContent = '☀️';
+  }
+  darkBtn.addEventListener('click', () => {
+    const d = html.classList.toggle('dark');
+    darkBtn.textContent = d ? '☀️' : '🌙';
+    localStorage.setItem('flow.darkMode', d);
+  });
+
+  // Currency selector — sync from saved
+  const currSel = document.getElementById('currencySel');
+  const savedOpt = Array.from(currSel.options).find(o => o.value === currency.code);
+  if (savedOpt) { currSel.value = currency.code; }
+  currSel.addEventListener('change', () => {
+    const opt = currSel.options[currSel.selectedIndex];
+    currency = { code: opt.value, sym: opt.dataset.sym };
+    save();
+    render();
+  });
+
+  // Add button
+  document.getElementById('addBtn').addEventListener('click', addItem);
+
+  // Enter key on form fields
+  ['fName','fPrice','fQty'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') addItem();
+    });
+  });
+
+  // Custom category toggle
+  document.getElementById('fCategory').addEventListener('change', function() {
+    document.getElementById('customCatWrap').style.display =
+      this.value === '__custom__' ? '' : 'none';
+  });
+
+  // Search
+  document.getElementById('searchInput').addEventListener('input', function() {
+    searchQ = this.value.trim();
+    render();
+  });
+
+  // Sort
+  document.getElementById('sortSel').addEventListener('change', function() {
+    sortMode = this.value;
+    save();
+    render();
+  });
+  document.getElementById('sortSel').value = sortMode;
+
+  // Action buttons
+  document.getElementById('copyBtn').addEventListener('click', copySummary);
+  document.getElementById('exportBtn').addEventListener('click', exportCSV);
+  document.getElementById('clearBtn').addEventListener('click', clearAll);
+
+  // Quick-add chips
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.getElementById('fName').value = chip.dataset.name;
+      document.getElementById('fPrice').value = chip.dataset.price;
+      document.getElementById('fQty').value = '1';
+      // Set category
+      const catSel = document.getElementById('fCategory');
+      const opt = Array.from(catSel.options).find(o => o.value === chip.dataset.cat);
+      if (opt) catSel.value = chip.dataset.cat;
+      document.getElementById('fName').focus();
+    });
+  });
+
+  render();
+});
+</script>
+</body>
+</html>
