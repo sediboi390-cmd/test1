@@ -1,0 +1,1 @@
+#[[file:/projects/sandbox/seedance2-skill/SKILL.md]]
