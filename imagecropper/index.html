@@ -854,24 +854,40 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 function download(format) {
   if (!img) return;
 
-  // The simplest and most accurate approach:
-  // The main canvas already renders the image exactly as the user sees it.
-  // Just copy the crop rectangle directly from the live canvas — no re-render needed.
   const cw = Math.round(cropW);
   const ch = Math.round(cropH);
   if (cw < 1 || ch < 1) return;
 
+  // Step 1: Render the image cleanly onto a full-size canvas
+  // WITHOUT any overlays, grid lines, handles or dark mask.
+  const { dw, dh } = getDisplaySize();
+  const swapped = rotation === 90 || rotation === 270;
+  const s = Math.min(1, dw / (swapped ? origH : origW), dh / (swapped ? origW : origH)) * zoom;
+
+  const cleanCanvas = document.createElement('canvas');
+  cleanCanvas.width  = dw;
+  cleanCanvas.height = dh;
+  const cc = cleanCanvas.getContext('2d');
+
+  cc.save();
+  cc.translate(dw / 2, dh / 2);
+  cc.rotate(rotation * Math.PI / 180);
+  cc.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+  cc.drawImage(img, -origW * s / 2, -origH * s / 2, origW * s, origH * s);
+  cc.restore();
+
+  // Step 2: Extract exactly the crop rectangle from the clean canvas
   const off = document.createElement('canvas');
   off.width  = cw;
   off.height = ch;
   const oc = off.getContext('2d');
 
   oc.drawImage(
-    canvas,
-    Math.round(cropX), Math.round(cropY),  // source x,y on main canvas
-    cw, ch,                                 // source w,h
-    0, 0,                                   // dest x,y
-    cw, ch                                  // dest w,h
+    cleanCanvas,
+    Math.round(cropX), Math.round(cropY),
+    cw, ch,
+    0, 0,
+    cw, ch
   );
 
   const mime    = format === 'jpg' ? 'image/jpeg' : 'image/png';
