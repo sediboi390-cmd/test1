@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Shopee Restock Check",
+  "description": "Runs the Shopee restock tracker and displays the stock status result in Kiro",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "C:\\Users\\Supremo\\AppData\\Local\\Programs\\Python\\Python312\\python.exe C:\\Users\\Supremo\\Documents\\flow\\scrapers\\shopee_restock_tracker.py",
+    "timeout": 30
+  }
+}
