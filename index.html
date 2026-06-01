@@ -21,9 +21,9 @@
 }
 
 html.dark {
-  --bg: #111113;
-  --surface: #1c1c1f;
-  --border: #2a2a2e;
+  --bg: #0a0a0f;
+  --surface: #16161d;
+  --border: #2a2a35;
   --text: #ececef;
   --muted: #7a7a82;
 }
@@ -34,6 +34,82 @@ body {
   color: var(--text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ── Animated Background ── */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(74, 140, 140, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(123, 123, 168, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(107, 143, 113, 0.05) 0%, transparent 60%);
+  animation: bgFloat 20s ease-in-out infinite;
+  z-index: -1;
+  pointer-events: none;
+}
+
+html.dark body::before {
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(74, 140, 140, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(123, 123, 168, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.06) 0%, transparent 60%);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 70% 30%, rgba(245, 158, 11, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 30% 70%, rgba(14, 165, 233, 0.04) 0%, transparent 40%);
+  animation: bgFloat2 25s ease-in-out infinite;
+  z-index: -1;
+  pointer-events: none;
+}
+
+html.dark body::after {
+  background: 
+    radial-gradient(circle at 70% 30%, rgba(245, 158, 11, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 30% 70%, rgba(14, 165, 233, 0.06) 0%, transparent 40%);
+}
+
+@keyframes bgFloat {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(2%, -2%) rotate(1deg); }
+  66% { transform: translate(-1%, 1%) rotate(-0.5deg); }
+}
+
+@keyframes bgFloat2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-1.5%, 1.5%); }
+}
+
+/* ── Mesh grid overlay (subtle) ── */
+.mesh-bg {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: 
+    linear-gradient(rgba(74, 140, 140, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74, 140, 140, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+html.dark .mesh-bg {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
 }
 
 /* ── Header ── */
@@ -275,6 +351,7 @@ footer {
 </style>
 </head>
 <body>
+<div class="mesh-bg"></div>
 
 <header>
   <div class="brand">
